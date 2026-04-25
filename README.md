@@ -515,5 +515,6 @@ If you want to **run it yourself**: see *Quick start* above.
 
 ## License
 
-No license has been declared. Default copyright applies — the code is visible
-but not freely re-usable until a license file is added.
+## 📄 License
+
+This project is licensed under the MIT License.

@@ -1,0 +1,17 @@
+{
+  "agent_role": "bear",
+  "claim": "The model should deploy, but the current threshold under-flags given FN=$500/FP=$5, seed-selection roulette puts 25% of retrains below the 0.85 F1 bar, and genuine Time-axis drift (29/29 KS-significant features) means today's EV advantage erodes without active threshold tuning and drift-aware retraining.",
+  "evidence": [
+    "Cost-matrix re-scoring: with FN=$500 and FP=$5 (100:1 ratio), the optimal Bayes threshold is near p*=FP/(FP+FN)=0.0099, so any threshold that misses 16/98 frauds ($8,000 in unrecovered FN loss) to save on the cheap $5 FP side is mis-tuned - the model is under-flagging, not over-flagging.",
+    "Seed-variance tail risk (outputs/seed_variance.json): 5/20 seeds land below the 0.85 F1 gate (0.8172, 0.8254, 0.8261, 0.8404, 0.8495); worst-seed F1=0.8172 is 4.9 percentage points below the mean and recall on that seed likely drops materially given only 98 test frauds - a 25% chance production ships a sub-SLA model if seed selection is unpinned.",
+    "Real drift confirmed (outputs/drift_shuffle.json): KS test shows 29/29 features significant at p<0.05 on the Time-median split versus 0/29 under random shuffle - v1's rel_delta=2.0 citation was artifact, but the underlying temporal distribution shift is genuine and universal across features, so the $40,945/slice savings is a point-in-time number that will decay.",
+    "Base-rate fragility (outputs/eda_summary.json): fraud_rate=0.001727 and only 492 total positives means the 16 missed frauds represent ~3.3% of the entire positive class; a single adverse seed plus observed drift can easily push recall below 0.80, flipping per-slice EV if fraud mix shifts toward higher-value transactions not captured by the flat $500 FN assumption.",
+    "scale_pos_weight=577 was calibrated to the training prior; under Time-split drift where every feature has shifted, the implied posterior is stale, which compounds the threshold mis-tuning above - recalibration (isotonic/Platt) on a recent slice is a cheap fix the v1 bull did not address."
+  ],
+  "confidence": 0.6,
+  "challenges": [
+    "Bull will correctly note that $40,945 savings per 0.4-day slice dominates any reasonable retraining cost, so 'don't deploy' is wrong - I concede that and narrow the claim to threshold tuning plus seed pinning plus drift monitoring as deployment prerequisites.",
+    "Devil may argue the 100:1 cost ratio is itself user-specified and uncertain; if true FP cost includes customer-friction/chargeback-dispute externalities it could be 5-10x higher, which would weaken the 'under-flag' claim - I acknowledge the cost matrix is the load-bearing assumption.",
+    "Judge may point out that 25% sub-0.85 seeds still average to 0.866, so ensemble or seed-fixing trivially resolves the roulette concern - agreed, which is why my claim is 'fix threshold and pin seed', not 'block deploy'."
+  ]
+}

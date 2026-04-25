@@ -1,0 +1,7 @@
+{
+  "final_prediction": "hold pending cost matrix, seed-variance CI, and drift-split audit before any deploy",
+  "confidence": 0.58,
+  "winning_argument": "devil",
+  "dissent_note": "A reasonable counter-view is that the devil's methodological critique, while sharp, is partly self-defeating: the rel_delta ~ +/-2.0 signature genuinely does look like a PCA zero-mean Time-split artifact, which would mean drift_detected=true is a false alarm and the bull's 'F1=0.8586, AUC=0.9684, precision=0.8817' case stands largely intact - in which case deploying behind a shadow-mode/analyst-review queue (as the bull implies) is defensible right now, and 'hold' merely delays value capture on a model that already clears the CLAUDE.md F1>=0.85 bar. One could also argue the bear overweights a 16/98 recall gap that, per the devil's own CI point, is inside sampling noise and therefore not a blocker either. If leadership has a rough FN-dollar vs FP-minute ratio in mind, bull likely wins; absent that, devil wins - which is the call made here.",
+  "human_approval_required": true
+}

@@ -1,0 +1,26 @@
+# Large datasets — regenerable via `python scripts/run_pipeline.py` or `/go`
+data/*
+!data/.gitkeep
+
+# Trained model — regenerable; pickled XGBoost is version-fragile
+models/model.pkl
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/
+
+# Local Claude state (not part of the project contract)
+memory/
+.claude/settings.local.json

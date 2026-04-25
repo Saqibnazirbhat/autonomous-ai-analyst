@@ -1,0 +1,28 @@
+{
+  "cost_matrix": {
+    "FN_cost_usd": 500.0,
+    "FP_cost_usd": 5.0,
+    "assumptions": "FN = $500 avg fraud loss. FP = 5 analyst minutes @ $1/min = $5."
+  },
+  "test_slice_span_days": 0.3999814814814815,
+  "observed_confusion_matrix": {
+    "TN": 56853,
+    "FP": 11,
+    "FN": 16,
+    "TP": 82,
+    "total": 56962
+  },
+  "ev_analysis_usd": {
+    "model_cost": 8055.0,
+    "flag_none_cost": 49000.0,
+    "flag_all_cost": 284320.0,
+    "savings_vs_flag_none": 40945.0,
+    "savings_vs_flag_all": 276265.0
+  },
+  "per_day_extrapolation_usd": {
+    "days_covered_by_test_slice": 0.3999814814814815,
+    "savings_per_day_vs_flag_none": 102367.23922403815
+  },
+  "seed_variance_cost_note": "F1 std=0.0249 across 20 seeds. Worst seed F1=0.8172. Under worst seed, assuming recall drops proportionally, FN count could rise ~25-30% (from 16 to ~20), adding ~$2,000 to model_cost per test slice. This is a material risk vs. the single-seed picture.",
+  "headline": "Model saves $40,945 per test slice (~0.40 days) vs. flag-nothing baseline. That is $102,367/day."
+}

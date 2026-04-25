@@ -1,0 +1,3405 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=1440" />
+<title>FraudIQ — Fraud Detection Overview</title>
+<style>
+  /* ========================================================
+     Design tokens
+     ======================================================== */
+  :root {
+    --bg-0: #0a0b0e;
+    --bg-1: #101217;
+    --bg-2: #161922;
+    --bg-3: #1d2030;
+    --line: rgba(255, 255, 255, 0.06);
+    --line-strong: rgba(255, 255, 255, 0.12);
+
+    --fg-1: #e8eaf0;
+    --fg-2: #a5aab6;
+    --fg-3: #70758a;
+    --fg-4: #4a4f62;
+
+    --accent: #60a5fa;
+    --accent-soft: rgba(96, 165, 250, 0.12);
+    --cyan: #22d3ee;
+    --cyan-soft: rgba(34, 211, 238, 0.12);
+    --green: #34d399;
+    --green-soft: rgba(52, 211, 153, 0.12);
+    --amber: #fbbf24;
+    --amber-soft: rgba(251, 191, 36, 0.12);
+    --red: #f87171;
+    --red-soft: rgba(248, 113, 113, 0.12);
+    --violet: #a78bfa;
+    --violet-soft: rgba(167, 139, 250, 0.12);
+
+    --radius-sm: 6px;
+    --radius: 10px;
+    --radius-lg: 14px;
+
+    --shadow-card: 0 1px 0 rgba(255,255,255,0.03) inset, 0 12px 32px rgba(0,0,0,0.32);
+    --shadow-hover: 0 1px 0 rgba(255,255,255,0.05) inset, 0 24px 48px rgba(0,0,0,0.48);
+
+    --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+    --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg-0);
+    color: var(--fg-1);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    letter-spacing: -0.005em;
+  }
+
+  body {
+    min-width: 1280px;
+    background:
+      radial-gradient(1200px 600px at 20% -10%, rgba(96, 165, 250, 0.06), transparent 60%),
+      radial-gradient(800px 400px at 90% 10%, rgba(167, 139, 250, 0.05), transparent 60%),
+      var(--bg-0);
+  }
+
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; }
+
+  .num { font-family: var(--font-mono); font-feature-settings: "tnum" 1, "zero" 1; }
+
+  /* ========================================================
+     Top nav
+     ======================================================== */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    background: rgba(10, 11, 14, 0.72);
+    backdrop-filter: saturate(140%) blur(12px);
+    -webkit-backdrop-filter: saturate(140%) blur(12px);
+    border-bottom: 1px solid var(--line);
+  }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    color: var(--fg-1); font-weight: 600; letter-spacing: -0.01em;
+  }
+  .brand-logo {
+    width: 26px; height: 26px;
+    border-radius: 7px;
+    background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+    display: grid; place-items: center;
+    box-shadow: 0 4px 14px rgba(96, 165, 250, 0.4);
+  }
+  .brand-logo svg { color: #0a0b0e; }
+  .brand-name { font-size: 14px; }
+  .brand-name .dim { color: var(--fg-3); font-weight: 500; }
+
+  .env-badge {
+    margin-left: 14px;
+    padding: 3px 8px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--green);
+    background: var(--green-soft);
+    border: 1px solid rgba(52, 211, 153, 0.2);
+    border-radius: 999px;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .env-badge::before {
+    content: "";
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.2);
+    animation: pulse 2.2s var(--ease) infinite;
+  }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.35); }
+    70% { box-shadow: 0 0 0 6px rgba(52, 211, 153, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+  }
+
+  .nav {
+    display: flex; gap: 4px;
+    margin-left: 32px;
+  }
+  .nav a {
+    padding: 7px 12px;
+    border-radius: var(--radius-sm);
+    color: var(--fg-2);
+    font-size: 13px;
+    font-weight: 500;
+    transition: background 160ms var(--ease), color 160ms var(--ease);
+    display: inline-flex; align-items: center; gap: 7px;
+  }
+  .nav a svg { opacity: 0.8; }
+  .nav a:hover { background: rgba(255,255,255,0.04); color: var(--fg-1); }
+  .nav a.active {
+    background: rgba(255,255,255,0.06);
+    color: var(--fg-1);
+    box-shadow: inset 0 0 0 1px var(--line-strong);
+  }
+
+  .topbar-right {
+    margin-left: auto;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .search {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 10px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    color: var(--fg-3);
+    font-size: 12px;
+    min-width: 220px;
+    transition: border 160ms var(--ease), background 160ms var(--ease);
+  }
+  .search:hover { border-color: var(--line-strong); }
+  .search kbd {
+    margin-left: auto;
+    padding: 1px 5px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--fg-3);
+    background: var(--bg-3);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+  }
+  .icon-btn {
+    width: 32px; height: 32px;
+    display: grid; place-items: center;
+    color: var(--fg-2);
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 160ms var(--ease);
+  }
+  .icon-btn:hover { background: var(--bg-2); color: var(--fg-1); border-color: var(--line-strong); }
+  .icon-btn .dot {
+    position: absolute;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--amber);
+    transform: translate(9px, -9px);
+    box-shadow: 0 0 0 2px var(--bg-0);
+  }
+  .icon-btn-wrap { position: relative; }
+
+  .avatar {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #22d3ee, #a78bfa);
+    display: grid; place-items: center;
+    color: var(--bg-0);
+    font-size: 11.5px; font-weight: 700;
+    cursor: pointer;
+    transition: transform 160ms var(--ease);
+  }
+  .avatar:hover { transform: scale(1.05); }
+
+  /* ========================================================
+     Layout
+     ======================================================== */
+  .page {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 24px 24px 48px;
+  }
+
+  .page-head {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    margin-bottom: 22px;
+  }
+  .page-head h1 {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin: 0 0 4px;
+    color: var(--fg-1);
+  }
+  .page-head .sub {
+    color: var(--fg-3);
+    font-size: 13px;
+  }
+  .page-head .sub strong { color: var(--fg-2); font-weight: 500; }
+
+  .head-actions {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .seg {
+    display: inline-flex;
+    padding: 3px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+  }
+  .seg button {
+    padding: 5px 11px;
+    background: transparent;
+    border: 0;
+    color: var(--fg-3);
+    font-size: 12px; font-weight: 500;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 160ms var(--ease);
+  }
+  .seg button:hover { color: var(--fg-1); }
+  .seg button.on {
+    background: var(--bg-3);
+    color: var(--fg-1);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.06) inset;
+  }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 7px 12px;
+    background: var(--bg-2);
+    color: var(--fg-1);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    font-size: 12px; font-weight: 500;
+    cursor: pointer;
+    transition: all 160ms var(--ease);
+  }
+  .btn:hover { background: var(--bg-3); border-color: var(--line-strong); }
+  .btn-primary {
+    background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+    border-color: #3b82f6;
+    color: #fff;
+    font-weight: 600;
+  }
+  .btn-primary:hover {
+    background: linear-gradient(180deg, #60a5fa 0%, #3b82f6 100%);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+  }
+
+  /* ========================================================
+     Cards
+     ======================================================== */
+  .card {
+    background: var(--bg-1);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-card);
+    transition: border-color 200ms var(--ease), transform 200ms var(--ease), box-shadow 200ms var(--ease);
+  }
+  .card:hover {
+    border-color: var(--line-strong);
+  }
+  .card-head {
+    padding: 16px 18px 12px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--line);
+  }
+  .card-title {
+    font-size: 13px; font-weight: 600;
+    color: var(--fg-1);
+    letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card-title .pill {
+    padding: 2px 7px;
+    font-size: 10.5px; font-weight: 500;
+    color: var(--fg-3);
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+  }
+  .card-sub {
+    font-size: 12px; color: var(--fg-3); margin-top: 2px;
+  }
+  .card-body { padding: 18px; }
+
+  .more-btn {
+    width: 24px; height: 24px;
+    display: grid; place-items: center;
+    color: var(--fg-3);
+    background: transparent;
+    border: 0;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 140ms var(--ease);
+  }
+  .more-btn:hover { background: var(--bg-2); color: var(--fg-1); }
+
+  /* ========================================================
+     KPI strip
+     ======================================================== */
+  .kpis {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .kpi {
+    padding: 16px 16px 14px;
+    background: var(--bg-1);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-card);
+    position: relative;
+    overflow: hidden;
+    transition: transform 220ms var(--ease), border-color 220ms var(--ease), box-shadow 220ms var(--ease);
+  }
+  .kpi::after {
+    content: "";
+    position: absolute; inset: 0 0 auto 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--line-strong), transparent);
+    opacity: 0;
+    transition: opacity 220ms var(--ease);
+  }
+  .kpi:hover {
+    transform: translateY(-1px);
+    border-color: var(--line-strong);
+    box-shadow: var(--shadow-hover);
+  }
+  .kpi:hover::after { opacity: 1; }
+
+  .kpi-label {
+    display: flex; align-items: center; gap: 6px;
+    color: var(--fg-3);
+    font-size: 11.5px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+  }
+  .kpi-label svg { color: var(--fg-3); }
+  .kpi-value {
+    margin-top: 10px;
+    font-family: var(--font-mono);
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--fg-1);
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+  .kpi-value .unit { font-size: 15px; color: var(--fg-3); font-weight: 500; }
+  .kpi-row {
+    margin-top: 8px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .delta {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 600;
+    font-family: var(--font-mono);
+  }
+  .delta.up    { color: var(--green); background: var(--green-soft); }
+  .delta.down  { color: var(--red);   background: var(--red-soft); }
+  .delta.warn  { color: var(--amber); background: var(--amber-soft); }
+  .delta.flat  { color: var(--fg-3);  background: var(--bg-2); }
+  .kpi-foot {
+    color: var(--fg-3);
+    font-size: 11px;
+  }
+
+  .spark { width: 70px; height: 22px; }
+
+  /* ========================================================
+     Row: area chart + side panels
+     ======================================================== */
+  .row-2 {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .row-3 {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  /* Legend */
+  .legend { display: inline-flex; align-items: center; gap: 14px; }
+  .legend-item { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--fg-2); }
+  .legend-dot { width: 8px; height: 8px; border-radius: 2px; }
+
+  /* ========================================================
+     Area chart
+     ======================================================== */
+  .area-wrap {
+    position: relative;
+    height: 280px;
+    width: 100%;
+  }
+  .area-wrap svg { display: block; width: 100%; height: 100%; }
+  .chart-hover-line {
+    stroke: var(--line-strong);
+    stroke-width: 1;
+    stroke-dasharray: 3 3;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 120ms var(--ease);
+  }
+  .chart-dot {
+    fill: var(--cyan);
+    stroke: var(--bg-1);
+    stroke-width: 2;
+    opacity: 0;
+    transition: opacity 120ms var(--ease);
+  }
+  .chart-dot.fraud { fill: var(--red); }
+  .area-wrap.on .chart-hover-line,
+  .area-wrap.on .chart-dot { opacity: 1; }
+  .tooltip {
+    position: absolute;
+    min-width: 180px;
+    padding: 10px 12px;
+    background: var(--bg-2);
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    box-shadow: 0 18px 36px rgba(0,0,0,0.4);
+    pointer-events: none;
+    transform: translate(-50%, -110%);
+    opacity: 0;
+    transition: opacity 120ms var(--ease);
+    font-size: 12px;
+  }
+  .area-wrap.on .tooltip { opacity: 1; }
+  .tooltip .t-hour { color: var(--fg-3); font-size: 11px; margin-bottom: 6px; }
+  .tooltip .t-row { display: flex; justify-content: space-between; gap: 12px; }
+  .tooltip .t-row + .t-row { margin-top: 3px; }
+  .tooltip .t-row .label { color: var(--fg-2); display: inline-flex; align-items: center; gap: 6px; }
+  .tooltip .t-row .val { color: var(--fg-1); font-family: var(--font-mono); }
+
+  /* ========================================================
+     Donut
+     ======================================================== */
+  .donut-wrap {
+    display: flex; align-items: center; gap: 20px;
+  }
+  .donut-center {
+    position: absolute; inset: 0;
+    display: grid; place-items: center;
+    pointer-events: none;
+  }
+  .donut-figure { position: relative; width: 148px; height: 148px; }
+  .donut-center .big {
+    font-family: var(--font-mono);
+    font-size: 22px; font-weight: 600;
+    color: var(--fg-1);
+    letter-spacing: -0.02em;
+  }
+  .donut-center .small { font-size: 11px; color: var(--fg-3); margin-top: 2px; }
+  .donut-legend { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+  .donut-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    transition: background 160ms var(--ease);
+  }
+  .donut-item:hover { background: var(--bg-2); }
+  .donut-item .swatch { width: 10px; height: 10px; border-radius: 3px; }
+  .donut-item .txt { flex: 1; }
+  .donut-item .lbl { color: var(--fg-2); font-size: 12px; }
+  .donut-item .val { color: var(--fg-1); font-family: var(--font-mono); font-size: 14px; margin-top: 1px; }
+  .donut-item .pct { color: var(--fg-3); font-family: var(--font-mono); font-size: 12px; }
+
+  /* ========================================================
+     Feature bars (horizontal)
+     ======================================================== */
+  .bars { display: flex; flex-direction: column; gap: 10px; }
+  .bar-row {
+    display: grid;
+    grid-template-columns: 46px 1fr 56px;
+    align-items: center;
+    gap: 12px;
+    padding: 4px 2px;
+    border-radius: var(--radius-sm);
+    transition: background 160ms var(--ease);
+  }
+  .bar-row:hover { background: rgba(255,255,255,0.02); }
+  .bar-name {
+    color: var(--fg-2);
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+  .bar-track {
+    height: 8px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+  .bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--cyan) 100%);
+    border-radius: 3px;
+    transition: width 280ms var(--ease);
+  }
+  .bar-val {
+    color: var(--fg-1);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    text-align: right;
+  }
+
+  /* ========================================================
+     Confusion matrix
+     ======================================================== */
+  .cmat {
+    display: grid;
+    grid-template-columns: 72px 1fr 1fr;
+    grid-template-rows: 20px 1fr 1fr;
+    gap: 6px;
+    align-items: stretch;
+  }
+  .cmat .axis {
+    display: grid; place-items: center;
+    color: var(--fg-3);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  .cmat .rlabel {
+    display: grid;
+    place-items: center;
+    color: var(--fg-3);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    padding: 8px 0;
+  }
+  .cmat .cell {
+    border-radius: 10px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    transition: transform 200ms var(--ease), border-color 200ms var(--ease);
+    min-height: 100px;
+  }
+  .cmat .cell:hover { transform: translateY(-1px); border-color: var(--line-strong); }
+  .cmat .cell.tn { background: rgba(52, 211, 153, 0.06); border-color: rgba(52, 211, 153, 0.18); }
+  .cmat .cell.tp { background: rgba(52, 211, 153, 0.18); border-color: rgba(52, 211, 153, 0.32); }
+  .cmat .cell.fp { background: rgba(251, 191, 36, 0.12); border-color: rgba(251, 191, 36, 0.28); }
+  .cmat .cell.fn { background: rgba(248, 113, 113, 0.18); border-color: rgba(248, 113, 113, 0.35); }
+  .cmat .cell .lbl {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--fg-2);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+  .cmat .cell .n {
+    font-family: var(--font-mono);
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--fg-1);
+    letter-spacing: -0.02em;
+  }
+  .cmat .cell .pct {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--fg-3);
+  }
+
+  /* ========================================================
+     Seed histogram
+     ======================================================== */
+  .seeds-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 10px;
+  }
+  .seeds-head .big {
+    font-family: var(--font-mono);
+    font-size: 22px; font-weight: 600;
+    color: var(--fg-1);
+    letter-spacing: -0.02em;
+  }
+  .seeds-head .big .unit { font-size: 13px; color: var(--fg-3); margin-left: 2px; }
+  .seeds-stats {
+    display: flex; gap: 16px;
+    font-size: 11.5px;
+    color: var(--fg-3);
+  }
+  .seeds-stats b { color: var(--fg-1); font-family: var(--font-mono); font-weight: 600; }
+
+  .hist {
+    position: relative;
+    height: 120px;
+    display: flex; align-items: flex-end;
+    gap: 4px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 6px;
+    margin-top: 10px;
+  }
+  .hist-bar {
+    flex: 1;
+    border-radius: 3px 3px 0 0;
+    background: linear-gradient(180deg, var(--accent) 0%, rgba(96,165,250,0.5) 100%);
+    transition: transform 180ms var(--ease), filter 180ms var(--ease);
+    cursor: pointer;
+    position: relative;
+  }
+  .hist-bar:hover { transform: scaleY(1.03); filter: brightness(1.2); }
+  .hist-bar.below {
+    background: linear-gradient(180deg, var(--red) 0%, rgba(248,113,113,0.45) 100%);
+  }
+  .hist-threshold {
+    position: absolute;
+    left: 0; right: 0;
+    height: 0;
+    border-top: 1px dashed var(--amber);
+    pointer-events: none;
+  }
+  .hist-threshold::after {
+    content: "F1 = 0.85 bar";
+    position: absolute;
+    right: 0;
+    top: -18px;
+    font-size: 10.5px;
+    font-family: var(--font-mono);
+    color: var(--amber);
+    background: var(--bg-1);
+    padding: 0 5px;
+  }
+  .hist-axis {
+    display: flex; justify-content: space-between;
+    margin-top: 6px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--fg-3);
+  }
+
+  /* ========================================================
+     Drift monitor
+     ======================================================== */
+  .drift-stat {
+    display: flex; align-items: baseline; justify-content: space-between;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 10px;
+  }
+  .drift-stat .label { font-size: 11.5px; color: var(--fg-3); text-transform: uppercase; letter-spacing: 0.03em; }
+  .drift-stat .val { font-family: var(--font-mono); font-size: 18px; color: var(--fg-1); font-weight: 600; }
+  .drift-note {
+    display: flex; gap: 8px;
+    padding: 8px 10px;
+    font-size: 11.5px;
+    color: var(--amber);
+    background: var(--amber-soft);
+    border: 1px solid rgba(251, 191, 36, 0.24);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    line-height: 1.4;
+  }
+  .drift-note svg { flex: 0 0 auto; margin-top: 1px; }
+  .drift-list { display: flex; flex-direction: column; gap: 6px; }
+  .drift-row {
+    display: grid;
+    grid-template-columns: 48px 1fr 60px 72px;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 8px;
+    border-radius: var(--radius-sm);
+    transition: background 160ms var(--ease);
+  }
+  .drift-row:hover { background: rgba(255,255,255,0.03); }
+  .drift-row .f { font-family: var(--font-mono); color: var(--fg-2); font-size: 12px; }
+  .drift-row .track { height: 5px; background: var(--bg-2); border-radius: 3px; overflow: hidden; }
+  .drift-row .track > div {
+    height: 100%;
+    background: linear-gradient(90deg, var(--amber), var(--red));
+    border-radius: 3px;
+  }
+  .drift-row .ks { font-family: var(--font-mono); color: var(--fg-1); font-size: 11.5px; text-align: right; }
+  .drift-row .p {
+    font-family: var(--font-mono);
+    color: var(--red);
+    font-size: 11px;
+    padding: 1px 7px;
+    background: var(--red-soft);
+    border-radius: 999px;
+    text-align: center;
+  }
+
+  /* ========================================================
+     Alerts table
+     ======================================================== */
+  .table-wrap { overflow: hidden; border-radius: var(--radius); }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+  }
+  thead th {
+    text-align: left;
+    padding: 11px 14px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--fg-3);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: rgba(255,255,255,0.015);
+    border-bottom: 1px solid var(--line);
+  }
+  tbody td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--line);
+    color: var(--fg-2);
+  }
+  tbody tr {
+    transition: background 140ms var(--ease);
+  }
+  tbody tr:hover { background: rgba(255,255,255,0.025); }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.mono { font-family: var(--font-mono); color: var(--fg-1); }
+  td.right { text-align: right; font-family: var(--font-mono); }
+  .risk {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 2px 8px;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+  }
+  .risk.high { color: var(--red);   background: var(--red-soft);   border-color: rgba(248,113,113,0.22); }
+  .risk.med  { color: var(--amber); background: var(--amber-soft); border-color: rgba(251,191,36,0.22); }
+  .risk.low  { color: var(--green); background: var(--green-soft); border-color: rgba(52,211,153,0.22); }
+
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 1px 8px;
+    font-size: 11px;
+    font-weight: 500;
+    border-radius: 999px;
+    color: var(--fg-2);
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+  }
+  .chip.ok { color: var(--green); background: var(--green-soft); border-color: rgba(52,211,153,0.22); }
+  .chip.warn { color: var(--amber); background: var(--amber-soft); border-color: rgba(251,191,36,0.22); }
+  .chip + .chip { margin-left: 4px; }
+
+  /* ========================================================
+     Debate verdict footer
+     ======================================================== */
+  .verdict {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 0;
+  }
+  .verdict-left { padding: 18px 22px; border-right: 1px solid var(--line); }
+  .verdict-right { padding: 18px 22px; }
+  .verdict-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+  .verdict-head h3 { margin: 0; font-size: 13px; font-weight: 600; color: var(--fg-1); letter-spacing: -0.01em; }
+  .verdict-head .sub { font-size: 11.5px; color: var(--fg-3); }
+
+  .agent-row {
+    display: grid;
+    grid-template-columns: 120px 1fr 72px;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--line);
+  }
+  .agent-row:last-child { border-bottom: 0; }
+  .agent-role {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; font-weight: 500; color: var(--fg-1);
+  }
+  .agent-role .ico {
+    width: 22px; height: 22px;
+    display: grid; place-items: center;
+    border-radius: 6px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+  }
+  .agent-role.bull   .ico { background: var(--green-soft); border-color: rgba(52,211,153,0.22); color: var(--green); }
+  .agent-role.bear   .ico { background: var(--red-soft);   border-color: rgba(248,113,113,0.22); color: var(--red); }
+  .agent-role.devil  .ico { background: var(--violet-soft); border-color: rgba(167,139,250,0.22); color: var(--violet); }
+  .agent-role .sub { color: var(--fg-3); font-size: 11px; font-weight: 400; }
+
+  .agent-bar {
+    height: 6px;
+    background: var(--bg-2);
+    border-radius: 3px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+  }
+  .agent-bar > div {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 300ms var(--ease);
+  }
+  .agent-bar.bull > div  { background: linear-gradient(90deg, var(--green) 0%, #059669 100%); }
+  .agent-bar.bear > div  { background: linear-gradient(90deg, var(--red) 0%, #dc2626 100%); }
+  .agent-bar.devil > div { background: linear-gradient(90deg, var(--violet) 0%, #7c3aed 100%); }
+  .agent-conf { font-family: var(--font-mono); color: var(--fg-1); text-align: right; font-size: 12.5px; }
+
+  .winner-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 9px;
+    font-size: 11px;
+    color: var(--green);
+    background: var(--green-soft);
+    border: 1px solid rgba(52,211,153,0.28);
+    border-radius: 999px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .final-pred {
+    font-size: 15px;
+    color: var(--fg-1);
+    font-weight: 600;
+    line-height: 1.45;
+    margin-top: 8px;
+  }
+  .dissent {
+    margin-top: 14px;
+    padding: 12px 14px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    font-size: 12px;
+    color: var(--fg-2);
+    line-height: 1.55;
+  }
+  .dissent .label {
+    font-size: 10.5px;
+    color: var(--fg-3);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .verdict-actions { display: flex; gap: 8px; margin-top: 14px; }
+
+  /* Grid helpers */
+  .grid-gap-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .stack { display: flex; flex-direction: column; gap: 14px; }
+
+  /* utility */
+  .muted { color: var(--fg-3); }
+  .small { font-size: 11.5px; }
+  .flex { display: flex; }
+  .items-center { align-items: center; }
+  .gap-2 { gap: 8px; }
+  .gap-4 { gap: 16px; }
+  .mt-1 { margin-top: 4px; }
+  .mt-2 { margin-top: 8px; }
+
+  /* Section header for card with split */
+  .section-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--line);
+  }
+  .section-row h3 { margin: 0; font-size: 13px; font-weight: 600; color: var(--fg-1); letter-spacing: -0.01em; }
+
+  /* Chart axis */
+  .axis-x {
+    display: flex; justify-content: space-between;
+    margin-top: 8px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--fg-3);
+  }
+
+  /* Sub stats under a title */
+  .substat {
+    display: flex; gap: 16px;
+    font-size: 11.5px;
+  }
+  .substat .k { color: var(--fg-3); }
+  .substat .v { color: var(--fg-1); font-family: var(--font-mono); margin-left: 4px; font-weight: 500; }
+
+  /* ========================================================
+     Interactive additions (search input, toast, notif, spinner)
+     ======================================================== */
+  .search input {
+    flex: 1;
+    background: transparent;
+    border: 0;
+    outline: none;
+    color: var(--fg-1);
+    font-size: 12px;
+    font-family: inherit;
+    padding: 0;
+    min-width: 0;
+  }
+  .search input::placeholder { color: var(--fg-3); }
+  .search:focus-within {
+    border-color: rgba(96,165,250,0.55);
+    background: var(--bg-1);
+    box-shadow: 0 0 0 3px rgba(96,165,250,0.12);
+  }
+
+  .spin { animation: spin 700ms linear infinite; transform-origin: 50% 50%; }
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+
+  .btn:disabled { opacity: 0.6; cursor: wait; }
+
+  tbody tr.selected {
+    background: rgba(96,165,250,0.05);
+    box-shadow: inset 3px 0 0 var(--accent);
+  }
+  tbody tr.filtered-out { display: none; }
+
+  /* Toast */
+  .toast-wrap {
+    position: fixed;
+    right: 24px; bottom: 24px;
+    display: flex; flex-direction: column; gap: 8px;
+    z-index: 200;
+    pointer-events: none;
+  }
+  .toast {
+    pointer-events: auto;
+    min-width: 280px;
+    max-width: 360px;
+    padding: 11px 14px 11px 12px;
+    background: var(--bg-2);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    box-shadow: 0 18px 38px rgba(0,0,0,0.52), 0 1px 0 rgba(255,255,255,0.04) inset;
+    display: flex; align-items: flex-start; gap: 10px;
+    font-size: 12.5px;
+    color: var(--fg-1);
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 220ms var(--ease), transform 220ms var(--ease);
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast .t-ico {
+    width: 20px; height: 20px;
+    display: grid; place-items: center;
+    flex: 0 0 auto;
+    border-radius: 5px;
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+  .toast.success .t-ico { background: var(--green-soft); color: var(--green); }
+  .toast.warn    .t-ico { background: var(--amber-soft); color: var(--amber); }
+  .toast .t-body { flex: 1; line-height: 1.35; }
+  .toast .t-title { font-weight: 600; }
+  .toast .t-desc  { color: var(--fg-2); font-size: 11.5px; margin-top: 1px; }
+  .toast .t-close {
+    background: transparent; border: 0; color: var(--fg-3);
+    padding: 0; margin-left: 2px; cursor: pointer;
+    display: grid; place-items: center;
+    transition: color 120ms var(--ease);
+  }
+  .toast .t-close:hover { color: var(--fg-1); }
+
+  /* Notifications popover */
+  .notif {
+    position: absolute;
+    top: 42px; right: 0;
+    width: 320px;
+    max-height: 420px;
+    overflow-y: auto;
+    background: var(--bg-1);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    box-shadow: 0 28px 56px rgba(0,0,0,0.56);
+    opacity: 0;
+    transform: translateY(-6px);
+    pointer-events: none;
+    transition: opacity 180ms var(--ease), transform 180ms var(--ease);
+    z-index: 60;
+  }
+  .notif.on { opacity: 1; transform: translateY(0); pointer-events: auto; }
+  .notif-head {
+    position: sticky; top: 0;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 14px;
+    background: var(--bg-1);
+    border-bottom: 1px solid var(--line);
+  }
+  .notif-head h4 { margin: 0; font-size: 13px; font-weight: 600; color: var(--fg-1); }
+  .notif-head a  { font-size: 11px; color: var(--fg-3); cursor: pointer; transition: color 140ms var(--ease); }
+  .notif-head a:hover { color: var(--fg-1); }
+  .notif-item {
+    display: flex; gap: 10px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--line);
+    cursor: pointer;
+    transition: background 140ms var(--ease);
+  }
+  .notif-item:hover { background: var(--bg-2); }
+  .notif-item:last-child { border-bottom: 0; }
+  .notif-item .n-dot { width: 7px; height: 7px; border-radius: 50%; margin-top: 6px; flex: 0 0 auto; background: var(--accent); }
+  .notif-item.warn .n-dot { background: var(--amber); }
+  .notif-item.err  .n-dot { background: var(--red); }
+  .notif-item .n-body { flex: 1; }
+  .notif-item .n-title { font-size: 12.5px; color: var(--fg-1); font-weight: 500; }
+  .notif-item .n-desc  { font-size: 11.5px; color: var(--fg-3); margin-top: 1px; line-height: 1.4; }
+  .notif-item .n-time  { font-size: 10.5px; color: var(--fg-4); margin-top: 3px; font-family: var(--font-mono); }
+
+  /* Avatar menu */
+  .avatar-menu {
+    position: absolute;
+    top: 42px; right: 0;
+    min-width: 200px;
+    background: var(--bg-1);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    box-shadow: 0 28px 56px rgba(0,0,0,0.56);
+    opacity: 0;
+    transform: translateY(-6px);
+    pointer-events: none;
+    transition: opacity 160ms var(--ease), transform 160ms var(--ease);
+    z-index: 60;
+    padding: 6px;
+  }
+  .avatar-menu.on { opacity: 1; transform: translateY(0); pointer-events: auto; }
+  .avatar-menu .hdr { padding: 8px 10px 10px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+  .avatar-menu .hdr .nm { color: var(--fg-1); font-weight: 600; font-size: 12.5px; }
+  .avatar-menu .hdr .rl { color: var(--fg-3); font-size: 11px; margin-top: 1px; }
+  .avatar-menu button {
+    width: 100%;
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 10px;
+    background: transparent;
+    border: 0;
+    color: var(--fg-2);
+    font-size: 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    text-align: left;
+    transition: all 140ms var(--ease);
+  }
+  .avatar-menu button:hover { background: var(--bg-2); color: var(--fg-1); }
+  .avatar-wrap { position: relative; }
+
+  /* ========================================================
+     Tab visibility (data-tabs="overview alerts models ..." )
+     ======================================================== */
+  .hidden { display: none !important; }
+
+  /* ========================================================
+     Models: model card, hyperparams, history
+     ======================================================== */
+  .model-card {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 0;
+  }
+  .model-card-left { padding: 22px 24px; border-right: 1px solid var(--line); }
+  .model-card-right { padding: 22px 24px; }
+  .model-title-row {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 4px;
+  }
+  .model-title-row .model-name {
+    font-size: 18px; font-weight: 600; color: var(--fg-1); letter-spacing: -0.02em;
+    font-family: var(--font-mono);
+  }
+  .model-title-row .badge {
+    padding: 3px 9px; font-size: 11px; font-weight: 600;
+    color: var(--green);
+    background: var(--green-soft);
+    border: 1px solid rgba(52,211,153,0.28);
+    border-radius: 999px;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .model-meta {
+    display: flex; gap: 18px; flex-wrap: wrap;
+    color: var(--fg-3); font-size: 12px;
+  }
+  .model-meta .k { color: var(--fg-3); }
+  .model-meta .v { color: var(--fg-1); font-family: var(--font-mono); margin-left: 4px; font-weight: 500; }
+  .metric-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+    margin-top: 18px;
+  }
+  .metric-cell {
+    padding: 10px 12px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+  }
+  .metric-cell .l { font-size: 10.5px; color: var(--fg-3); text-transform: uppercase; letter-spacing: 0.04em; }
+  .metric-cell .v { font-family: var(--font-mono); font-size: 18px; font-weight: 600; color: var(--fg-1); margin-top: 4px; letter-spacing: -0.01em; }
+  .hyper {
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .hyper-row {
+    display: flex; justify-content: space-between;
+    padding: 7px 0;
+    font-size: 12px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .hyper-row:last-child { border-bottom: 0; }
+  .hyper-row .k { color: var(--fg-3); }
+  .hyper-row .v { color: var(--fg-1); font-family: var(--font-mono); }
+
+  /* ========================================================
+     Hourly bar chart (alerts)
+     ======================================================== */
+  .barchart {
+    display: flex; align-items: flex-end;
+    gap: 3px;
+    height: 130px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--line);
+  }
+  .bc-bar {
+    flex: 1;
+    border-radius: 3px 3px 0 0;
+    background: linear-gradient(180deg, var(--accent) 0%, rgba(96,165,250,0.5) 100%);
+    transition: filter 160ms var(--ease), transform 160ms var(--ease);
+    cursor: pointer;
+    min-height: 3px;
+  }
+  .bc-bar:hover { filter: brightness(1.25); transform: scaleY(1.04); }
+  .bc-axis {
+    display: flex; justify-content: space-between;
+    margin-top: 6px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--fg-3);
+  }
+
+  /* Stacked breakdown bar */
+  .stack-bar {
+    height: 28px;
+    display: flex;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+  }
+  .stack-bar > div {
+    transition: filter 160ms var(--ease);
+  }
+  .stack-bar > div:hover { filter: brightness(1.2); }
+  .stack-legend {
+    display: flex; flex-wrap: wrap; gap: 14px;
+    margin-top: 12px;
+    font-size: 12px;
+  }
+  .stack-legend .item { display: inline-flex; align-items: center; gap: 6px; color: var(--fg-2); }
+  .stack-legend .swatch { width: 10px; height: 10px; border-radius: 3px; }
+  .stack-legend .num { color: var(--fg-1); font-family: var(--font-mono); font-weight: 500; margin-left: 4px; }
+
+  /* ========================================================
+     Filter chips bar
+     ======================================================== */
+  .filter-bar {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--line);
+  }
+  .filter-chip {
+    padding: 5px 11px;
+    background: var(--bg-2);
+    color: var(--fg-2);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 140ms var(--ease);
+    user-select: none;
+  }
+  .filter-chip:hover { background: var(--bg-3); color: var(--fg-1); border-color: var(--line-strong); }
+  .filter-chip.on {
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-color: rgba(96,165,250,0.32);
+  }
+
+  /* ========================================================
+     Trace timeline (governance)
+     ======================================================== */
+  .trace-list {
+    display: flex; flex-direction: column;
+    position: relative;
+  }
+  .trace-list::before {
+    content: "";
+    position: absolute;
+    left: 110px; top: 8px; bottom: 8px;
+    width: 1px;
+    background: var(--line);
+  }
+  .trace-row {
+    display: grid;
+    grid-template-columns: 100px 36px 1fr;
+    gap: 0;
+    padding: 9px 0;
+    align-items: flex-start;
+  }
+  .trace-time {
+    color: var(--fg-3);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-align: right;
+    padding-right: 14px;
+    padding-top: 2px;
+  }
+  .trace-marker {
+    display: grid; place-items: center;
+    width: 36px; padding-top: 4px;
+  }
+  .trace-marker .ring {
+    width: 11px; height: 11px;
+    border-radius: 50%;
+    background: var(--bg-1);
+    border: 2px solid var(--accent);
+    z-index: 1;
+  }
+  .trace-row.success .ring { border-color: var(--green); }
+  .trace-row.start   .ring { border-color: var(--accent); }
+  .trace-row.note    .ring { border-color: var(--violet); }
+  .trace-row.warn    .ring { border-color: var(--amber); }
+  .trace-content {
+    padding: 0 8px;
+  }
+  .trace-content .row-1 {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12.5px; color: var(--fg-1); font-weight: 500;
+  }
+  .trace-content .agent-tag {
+    padding: 1px 7px;
+    font-size: 10.5px;
+    font-family: var(--font-mono);
+    color: var(--fg-2);
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+  }
+  .trace-content .row-2 {
+    color: var(--fg-3);
+    font-size: 11.5px;
+    margin-top: 2px;
+    line-height: 1.4;
+  }
+
+  /* ========================================================
+     Agent debate mini-cards (governance)
+     ======================================================== */
+  .agent-mini {
+    padding: 12px 14px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    transition: border-color 200ms var(--ease), transform 200ms var(--ease);
+  }
+  .agent-mini:hover { border-color: var(--line-strong); transform: translateY(-1px); }
+  .agent-mini-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .agent-mini-role {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 11.5px; font-weight: 600; color: var(--fg-1);
+    text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .agent-mini-role .ico {
+    width: 18px; height: 18px;
+    display: grid; place-items: center;
+    border-radius: 5px;
+    background: var(--bg-3);
+  }
+  .agent-mini.bull   .agent-mini-role .ico { background: var(--green-soft); color: var(--green); }
+  .agent-mini.bear   .agent-mini-role .ico { background: var(--red-soft); color: var(--red); }
+  .agent-mini.devil  .agent-mini-role .ico { background: var(--violet-soft); color: var(--violet); }
+  .agent-mini-conf {
+    font-family: var(--font-mono); font-size: 12px; color: var(--fg-1); font-weight: 600;
+  }
+  .agent-mini-claim {
+    font-size: 12px; color: var(--fg-2); line-height: 1.5;
+  }
+  .agent-mini-tag {
+    margin-top: 8px;
+    font-size: 10.5px;
+    color: var(--fg-3);
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+
+  /* ========================================================
+     Reports - run history
+     ======================================================== */
+  .runs-cost-chart {
+    height: 180px;
+  }
+
+  /* ========================================================
+     Governance audit grid
+     ======================================================== */
+  .audit-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  .audit-stat {
+    padding: 14px 16px;
+    background: var(--bg-1);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    transition: border-color 200ms var(--ease), transform 200ms var(--ease);
+  }
+  .audit-stat:hover { border-color: var(--line-strong); transform: translateY(-1px); }
+  .audit-stat .l {
+    font-size: 11px; color: var(--fg-3);
+    text-transform: uppercase; letter-spacing: 0.04em;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .audit-stat .v {
+    font-family: var(--font-mono);
+    font-size: 22px; font-weight: 600;
+    color: var(--fg-1);
+    margin-top: 6px;
+    letter-spacing: -0.01em;
+  }
+  .audit-stat .s { font-size: 11px; color: var(--fg-3); margin-top: 2px; }
+
+  /* small grid for kpis-4 */
+  .kpis-4 { grid-template-columns: repeat(4, 1fr); }
+</style>
+</head>
+<body>
+
+<!-- ================================================================
+     TOP NAV
+     ================================================================ -->
+<nav class="topbar" aria-label="Primary">
+  <div class="brand">
+    <span class="brand-logo" aria-hidden="true">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    </span>
+    <span class="brand-name">FraudIQ <span class="dim">/ Analytics</span></span>
+  </div>
+  <span class="env-badge">Production</span>
+
+  <div class="nav" role="menubar">
+    <a class="active" href="#" role="menuitem" data-tab="overview">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+      Overview
+    </a>
+    <a href="#" role="menuitem" data-tab="alerts">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.5L2.8 16.1A2 2 0 0 0 4.5 19h14.9a2 2 0 0 0 1.7-2.9L13.7 3.5a2 2 0 0 0-3.4 0z"/><path d="M12 9v5M12 17h.01"/></svg>
+      Alerts
+    </a>
+    <a href="#" role="menuitem" data-tab="models">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 7.3L12 12l-8.5-4.7M12 12v9.5M3.5 7.3L12 2.5l8.5 4.8v9.4L12 21.5 3.5 16.7z"/></svg>
+      Models
+    </a>
+    <a href="#" role="menuitem" data-tab="reports">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h8M8 9h3"/></svg>
+      Reports
+    </a>
+    <a href="#" role="menuitem" data-tab="governance">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      Governance
+    </a>
+  </div>
+
+  <div class="topbar-right">
+    <div class="search" role="search">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input id="searchInput" placeholder="Search transactions, models, agents" autocomplete="off" />
+      <kbd>Ctrl K</kbd>
+    </div>
+    <div class="icon-btn-wrap">
+      <button class="icon-btn" id="bellBtn" title="Notifications" aria-label="Notifications" aria-haspopup="true" aria-expanded="false">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>
+        <span class="dot"></span>
+      </button>
+      <div class="notif" id="notifPanel" role="menu">
+        <div class="notif-head">
+          <h4>Notifications</h4>
+          <a id="notifClear">Mark all read</a>
+        </div>
+        <div class="notif-item err">
+          <span class="n-dot"></span>
+          <div class="n-body">
+            <div class="n-title">Drift KS-stat escalating on V14</div>
+            <div class="n-desc">Live KS = 0.252 over the last 60m. Threshold 0.20 exceeded.</div>
+            <div class="n-time">3 min ago</div>
+          </div>
+        </div>
+        <div class="notif-item warn">
+          <span class="n-dot"></span>
+          <div class="n-body">
+            <div class="n-title">3 transactions queued for analyst review</div>
+            <div class="n-desc">TX-8A41-3F29, TX-D504-5C18, TX-6F88-1B23</div>
+            <div class="n-time">14 min ago</div>
+          </div>
+        </div>
+        <div class="notif-item">
+          <span class="n-dot"></span>
+          <div class="n-body">
+            <div class="n-title">Round 2 verdict published</div>
+            <div class="n-desc">Bull wins; judge confidence 0.74. Human approval not required.</div>
+            <div class="n-time">42 min ago</div>
+          </div>
+        </div>
+        <div class="notif-item">
+          <span class="n-dot"></span>
+          <div class="n-body">
+            <div class="n-title">Seed-variance run complete</div>
+            <div class="n-desc">F1 mean 0.8659, 15/20 seeds clear the 0.85 bar.</div>
+            <div class="n-time">1 h ago</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <button class="icon-btn" id="gearBtn" title="Settings" aria-label="Settings">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+    </button>
+    <div class="avatar-wrap">
+      <div class="avatar" id="avatarBtn" title="User menu" role="button" tabindex="0">AS</div>
+      <div class="avatar-menu" id="avatarMenu" role="menu">
+        <div class="hdr">
+          <div class="nm">Ada Singh</div>
+          <div class="rl">Model owner &middot; Risk &amp; Trust</div>
+        </div>
+        <button data-toast="Profile" data-toast-desc="View account preferences">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+          Profile
+        </button>
+        <button data-toast="API keys" data-toast-desc="Rotate or revoke service tokens">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="14" r="3"/><path d="M11 12l9-9M16 7l3 3"/></svg>
+          API keys
+        </button>
+        <button data-toast="Theme" data-toast-desc="Light theme not implemented in this snapshot">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z"/></svg>
+          Theme
+        </button>
+        <button data-toast="Signed out" data-toast-desc="Session terminated locally" data-toast-kind="warn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>
+          Sign out
+        </button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- ================================================================
+     PAGE
+     ================================================================ -->
+<main class="page">
+
+  <!-- Page header -->
+  <header class="page-head">
+    <div>
+      <h1>Fraud Detection Overview</h1>
+      <div class="sub">Real-time model performance and transaction monitoring &middot; <strong>XGBoost v1.2.0</strong> &middot; deployed <strong>2026-04-24</strong></div>
+    </div>
+    <div class="head-actions">
+      <div class="seg" role="tablist" aria-label="Time range">
+        <button role="tab">1h</button>
+        <button role="tab" class="on" aria-selected="true">24h</button>
+        <button role="tab">7d</button>
+        <button role="tab">30d</button>
+      </div>
+      <button class="btn" title="Refresh">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15.5-6.3L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.3L3 16"/><path d="M3 21v-5h5"/></svg>
+        Refresh
+      </button>
+      <button class="btn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+        Export
+      </button>
+      <button class="btn btn-primary">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+        Deploy model
+      </button>
+    </div>
+  </header>
+
+  <!-- ================================================================
+       KPI STRIP (Overview)
+       ================================================================ -->
+  <section class="kpis" data-tabs="overview" aria-label="Key performance indicators">
+
+    <div class="kpi">
+      <div class="kpi-label">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.3 7L12 12l8.7-5M12 22V12"/></svg>
+        F1 Score
+      </div>
+      <div class="kpi-value num">0.8586</div>
+      <div class="kpi-row">
+        <span class="delta up">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+          +1.4%
+        </span>
+        <svg class="spark" viewBox="0 0 70 22" preserveAspectRatio="none">
+          <polyline fill="none" stroke="#34d399" stroke-width="1.5" stroke-linejoin="round"
+            points="0,16 8,14 16,15 24,12 32,10 40,11 48,8 56,6 64,7 70,4" />
+        </svg>
+      </div>
+      <div class="kpi-foot mt-2 small">vs. 0.8463 pre-deploy &middot; CI [0.855, 0.876]</div>
+    </div>
+
+    <div class="kpi">
+      <div class="kpi-label">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="M22 4L12 14l-3-3"/></svg>
+        Fraud Captured (24h)
+      </div>
+      <div class="kpi-value num">307 <span class="unit">/ 366</span></div>
+      <div class="kpi-row">
+        <span class="delta warn">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+          83.88%
+        </span>
+        <svg class="spark" viewBox="0 0 70 22" preserveAspectRatio="none">
+          <polyline fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-linejoin="round"
+            points="0,12 8,10 16,13 24,9 32,11 40,8 48,10 56,12 64,9 70,11" />
+        </svg>
+      </div>
+      <div class="kpi-foot mt-2 small">59 missed &middot; residual FN loss <span class="num">$29,500</span></div>
+    </div>
+
+    <div class="kpi">
+      <div class="kpi-label">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Loss Prevented (24h)
+      </div>
+      <div class="kpi-value num">$153,500</div>
+      <div class="kpi-row">
+        <span class="delta up">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+          +8.3%
+        </span>
+        <svg class="spark" viewBox="0 0 70 22" preserveAspectRatio="none">
+          <polyline fill="none" stroke="#22d3ee" stroke-width="1.5" stroke-linejoin="round"
+            points="0,18 8,16 16,14 24,11 32,13 40,9 48,7 56,6 64,5 70,3" />
+        </svg>
+      </div>
+      <div class="kpi-foot mt-2 small">net of <span class="num">$55</span> analyst review cost</div>
+    </div>
+
+    <div class="kpi">
+      <div class="kpi-label">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 4v16"/></svg>
+        False Positive Rate
+      </div>
+      <div class="kpi-value num">0.019<span class="unit">%</span></div>
+      <div class="kpi-row">
+        <span class="delta up">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+          -0.003%
+        </span>
+        <svg class="spark" viewBox="0 0 70 22" preserveAspectRatio="none">
+          <polyline fill="none" stroke="#34d399" stroke-width="1.5" stroke-linejoin="round"
+            points="0,4 8,6 16,8 24,7 32,10 40,9 48,12 56,14 64,13 70,15" />
+        </svg>
+      </div>
+      <div class="kpi-foot mt-2 small"><span class="num">11</span> false positives on <span class="num">56,864</span> legit txns</div>
+    </div>
+
+    <div class="kpi">
+      <div class="kpi-label">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a6 6 0 0 0-6 6v2a4 4 0 0 0-4 4 4 4 0 0 0 4 4h12a4 4 0 0 0 4-4 4 4 0 0 0-4-4V8a6 6 0 0 0-6-6z"/></svg>
+        Judge Confidence
+      </div>
+      <div class="kpi-value num">74<span class="unit">%</span></div>
+      <div class="kpi-row">
+        <span class="delta up">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+          +16.0pp
+        </span>
+        <svg class="spark" viewBox="0 0 70 22" preserveAspectRatio="none">
+          <polyline fill="none" stroke="#a78bfa" stroke-width="1.5" stroke-linejoin="round"
+            points="0,18 10,17 20,16 30,13 40,11 50,8 60,6 70,4" />
+        </svg>
+      </div>
+      <div class="kpi-foot mt-2 small">round 2 verdict: <strong style="color:var(--green)">bull</strong> wins</div>
+    </div>
+
+  </section>
+
+  <!-- ================================================================
+       ROW 1: Area chart + right rail (Overview)
+       ================================================================ -->
+  <section class="row-2" data-tabs="overview">
+
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">
+            Detection Volume
+            <span class="pill">Last 24 hours</span>
+          </div>
+          <div class="card-sub">Transactions scored against <span class="num">XGBoost v1.2.0</span> &middot; threshold <span class="num">p = 0.5</span></div>
+        </div>
+        <div class="flex items-center gap-4">
+          <div class="legend">
+            <span class="legend-item"><span class="legend-dot" style="background:#60a5fa"></span>Transactions</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#f87171"></span>Fraud attempts</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#34d399"></span>Caught</span>
+          </div>
+          <button class="more-btn" aria-label="More">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="card-body">
+
+        <!-- Area chart -->
+        <div class="area-wrap" id="areaWrap">
+          <svg id="areaChart" viewBox="0 0 800 260" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="gradTxn" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%"  stop-color="#60a5fa" stop-opacity="0.35"/>
+                <stop offset="100%" stop-color="#60a5fa" stop-opacity="0"/>
+              </linearGradient>
+              <linearGradient id="gradFraud" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%"  stop-color="#f87171" stop-opacity="0.3"/>
+                <stop offset="100%" stop-color="#f87171" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+
+            <!-- gridlines -->
+            <g stroke="rgba(255,255,255,0.05)" stroke-width="1">
+              <line x1="40" y1="30"  x2="790" y2="30"/>
+              <line x1="40" y1="80"  x2="790" y2="80"/>
+              <line x1="40" y1="130" x2="790" y2="130"/>
+              <line x1="40" y1="180" x2="790" y2="180"/>
+              <line x1="40" y1="230" x2="790" y2="230"/>
+            </g>
+
+            <!-- y-axis labels -->
+            <g fill="#70758a" font-family="JetBrains Mono, ui-monospace, monospace" font-size="10">
+              <text x="34" y="33"  text-anchor="end">14k</text>
+              <text x="34" y="83"  text-anchor="end">10.5k</text>
+              <text x="34" y="133" text-anchor="end">7k</text>
+              <text x="34" y="183" text-anchor="end">3.5k</text>
+              <text x="34" y="233" text-anchor="end">0</text>
+            </g>
+
+            <!-- Transactions area -->
+            <path id="areaTxn" fill="url(#gradTxn)" d=""/>
+            <path id="lineTxn" fill="none" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d=""/>
+
+            <!-- Fraud attempts area (scaled) -->
+            <path id="areaFraud" fill="url(#gradFraud)" d=""/>
+            <path id="lineFraud" fill="none" stroke="#f87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d=""/>
+
+            <!-- Caught dots (scaled same as fraud) -->
+            <g id="caughtDots" fill="#34d399" stroke="#101217" stroke-width="1.5"></g>
+
+            <!-- hover elements -->
+            <line id="hoverLine" class="chart-hover-line" x1="0" y1="0" x2="0" y2="260"/>
+            <circle id="dotTxn"   class="chart-dot"       r="4" cx="0" cy="0"/>
+            <circle id="dotFraud" class="chart-dot fraud" r="4" cx="0" cy="0"/>
+          </svg>
+          <div id="tooltip" class="tooltip">
+            <div class="t-hour" id="tipHour"></div>
+            <div class="t-row"><span class="label"><span class="legend-dot" style="background:#60a5fa"></span>Transactions</span><span class="val" id="tipTxn"></span></div>
+            <div class="t-row"><span class="label"><span class="legend-dot" style="background:#f87171"></span>Fraud attempts</span><span class="val" id="tipAtt"></span></div>
+            <div class="t-row"><span class="label"><span class="legend-dot" style="background:#34d399"></span>Caught</span><span class="val" id="tipCaught"></span></div>
+            <div class="t-row"><span class="label muted">Recall</span><span class="val" id="tipRecall"></span></div>
+          </div>
+        </div>
+
+        <div class="axis-x" id="axisX"></div>
+      </div>
+    </div>
+
+    <!-- Right rail: donut + top features -->
+    <div class="stack">
+
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Class Distribution</div>
+            <div class="card-sub">Training set &middot; <span class="num">284,807</span> transactions</div>
+          </div>
+          <button class="more-btn" aria-label="More">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
+          </button>
+        </div>
+        <div class="card-body">
+          <div class="donut-wrap">
+            <div class="donut-figure" id="donutFigure">
+              <svg viewBox="0 0 42 42" width="148" height="148" aria-hidden="true">
+                <!-- legit (99.83%) -->
+                <circle cx="21" cy="21" r="15.915"
+                        fill="transparent"
+                        stroke="#60a5fa"
+                        stroke-width="4.5"
+                        stroke-dasharray="99.83 0.17"
+                        stroke-dashoffset="25"
+                        transform="rotate(-90 21 21)"/>
+                <!-- fraud (0.17%) -->
+                <circle cx="21" cy="21" r="15.915"
+                        fill="transparent"
+                        stroke="#f87171"
+                        stroke-width="4.5"
+                        stroke-dasharray="0.17 99.83"
+                        stroke-dashoffset="-74.83"
+                        transform="rotate(-90 21 21)"/>
+                <!-- inner ring -->
+                <circle cx="21" cy="21" r="12.2" fill="transparent" stroke="rgba(255,255,255,0.04)" stroke-width="0.6"/>
+              </svg>
+              <div class="donut-center">
+                <div>
+                  <div class="big">0.17<span class="unit" style="font-size:14px;color:var(--fg-3)">%</span></div>
+                  <div class="small" style="color:var(--fg-3); text-align:center">fraud rate</div>
+                </div>
+              </div>
+            </div>
+            <div class="donut-legend">
+              <div class="donut-item">
+                <span class="swatch" style="background:#60a5fa"></span>
+                <div class="txt">
+                  <div class="lbl">Legitimate</div>
+                  <div class="val num">284,315</div>
+                </div>
+                <span class="pct">99.83%</span>
+              </div>
+              <div class="donut-item">
+                <span class="swatch" style="background:#f87171"></span>
+                <div class="txt">
+                  <div class="lbl">Fraud</div>
+                  <div class="val num">492</div>
+                </div>
+                <span class="pct">0.17%</span>
+              </div>
+              <div class="donut-item" style="border-top:1px dashed var(--line); padding-top:10px; margin-top:4px">
+                <span class="swatch" style="background:#a78bfa"></span>
+                <div class="txt">
+                  <div class="lbl">Positive/negative ratio</div>
+                  <div class="val num">1 : 577.7</div>
+                </div>
+                <span class="pct">&nbsp;</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Top Risk Features</div>
+            <div class="card-sub">|Pearson| correlation with <span class="num">Class</span></div>
+          </div>
+          <button class="more-btn" aria-label="More">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
+          </button>
+        </div>
+        <div class="card-body">
+          <div class="bars">
+            <div class="bar-row"><div class="bar-name">V17</div><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><div class="bar-val">0.3265</div></div>
+            <div class="bar-row"><div class="bar-name">V14</div><div class="bar-track"><div class="bar-fill" style="width:92.6%"></div></div><div class="bar-val">0.3025</div></div>
+            <div class="bar-row"><div class="bar-name">V12</div><div class="bar-track"><div class="bar-fill" style="width:79.8%"></div></div><div class="bar-val">0.2606</div></div>
+            <div class="bar-row"><div class="bar-name">V10</div><div class="bar-track"><div class="bar-fill" style="width:66.4%"></div></div><div class="bar-val">0.2169</div></div>
+            <div class="bar-row"><div class="bar-name">V11</div><div class="bar-track"><div class="bar-fill" style="width:58.4%"></div></div><div class="bar-val">0.1905</div></div>
+            <div class="bar-row"><div class="bar-name">V16</div><div class="bar-track"><div class="bar-fill" style="width:59.6%"></div></div><div class="bar-val">0.1947</div></div>
+            <div class="bar-row"><div class="bar-name">V3</div><div class="bar-track"><div class="bar-fill" style="width:59.0%"></div></div><div class="bar-val">0.1927</div></div>
+            <div class="bar-row"><div class="bar-name">V7</div><div class="bar-track"><div class="bar-fill" style="width:56.7%"></div></div><div class="bar-val">0.1852</div></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================================================================
+       ROW 2: confusion matrix + seeds + drift (Overview, Models)
+       ================================================================ -->
+  <section class="row-3" data-tabs="overview models">
+
+    <!-- Confusion matrix -->
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Confusion Matrix</div>
+          <div class="card-sub">Held-out test set &middot; <span class="num">56,962</span> transactions</div>
+        </div>
+        <span class="chip ok">F1 = 0.8586</span>
+      </div>
+      <div class="card-body">
+
+        <div class="cmat">
+          <div></div>
+          <div class="axis">Predicted: legit</div>
+          <div class="axis">Predicted: fraud</div>
+
+          <div class="rlabel">Actual</div>
+          <div class="cell tn">
+            <div class="lbl">True neg</div>
+            <div class="n num">56,853</div>
+            <div class="pct">99.981% of legit</div>
+          </div>
+          <div class="cell fp">
+            <div class="lbl">False pos</div>
+            <div class="n num">11</div>
+            <div class="pct">0.019% of legit</div>
+          </div>
+
+          <div></div>
+          <div class="cell fn">
+            <div class="lbl">False neg</div>
+            <div class="n num">16</div>
+            <div class="pct">16.33% of fraud</div>
+          </div>
+          <div class="cell tp">
+            <div class="lbl">True pos</div>
+            <div class="n num">82</div>
+            <div class="pct">83.67% of fraud</div>
+          </div>
+        </div>
+
+        <div class="substat" style="margin-top:16px">
+          <span><span class="k">Precision</span><span class="v">0.8817</span></span>
+          <span><span class="k">Recall</span><span class="v">0.8367</span></span>
+          <span><span class="k">AUC</span><span class="v">0.9684</span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Seed variance -->
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Seed Stability</div>
+          <div class="card-sub">20 stratified 80/20 re-fits &middot; F1 on fraud class</div>
+        </div>
+        <button class="more-btn" aria-label="More">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
+        </button>
+      </div>
+      <div class="card-body">
+        <div class="seeds-head">
+          <div>
+            <div class="big num">0.8659 <span class="unit">mean</span></div>
+            <div class="muted small">95% bootstrap CI [0.8554, 0.8764]</div>
+          </div>
+        </div>
+
+        <div class="hist" id="hist">
+          <!-- bars injected by JS -->
+          <div class="hist-threshold" id="histThreshold"></div>
+        </div>
+        <div class="hist-axis">
+          <span>0.81</span><span>0.85</span><span>0.90</span>
+        </div>
+
+        <div class="seeds-stats" style="margin-top:14px">
+          <span>std <b>0.0249</b></span>
+          <span>min <b>0.8172</b></span>
+          <span>max <b>0.9000</b></span>
+          <span>&gt;= 0.85 <b style="color:var(--green)">15/20</b></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Drift monitor -->
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">
+            Drift Monitor
+            <span class="pill" style="color:var(--amber);border-color:rgba(251,191,36,0.22);background:var(--amber-soft)">Covariate shift</span>
+          </div>
+          <div class="card-sub">KS test along <span class="num">Time</span> median split</div>
+        </div>
+        <button class="more-btn" aria-label="More">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
+        </button>
+      </div>
+      <div class="card-body">
+
+        <div class="drift-stat">
+          <div class="label">KS-significant features</div>
+          <div class="val num"><span style="color:var(--red)">29</span><span style="color:var(--fg-3); font-size:13px"> / 29</span></div>
+        </div>
+
+        <div class="drift-note">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+          <span>Shuffle control: <span class="num">0/29</span>. Real Time drift confirmed. Legacy rel_delta flag treated as managed risk via monitor loop.</span>
+        </div>
+
+        <div class="drift-list">
+          <div class="drift-row"><span class="f">V3</span>  <span class="track"><div style="width:100%"></div></span>  <span class="ks">0.284</span><span class="p">p &lt; 1e-8</span></div>
+          <div class="drift-row"><span class="f">V4</span>  <span class="track"><div style="width:93%"></div></span>   <span class="ks">0.263</span><span class="p">p &lt; 1e-8</span></div>
+          <div class="drift-row"><span class="f">V11</span> <span class="track"><div style="width:86%"></div></span>   <span class="ks">0.244</span><span class="p">p &lt; 1e-8</span></div>
+          <div class="drift-row"><span class="f">V10</span> <span class="track"><div style="width:72%"></div></span>   <span class="ks">0.202</span><span class="p">p &lt; 1e-7</span></div>
+          <div class="drift-row"><span class="f">V2</span>  <span class="track"><div style="width:65%"></div></span>   <span class="ks">0.182</span><span class="p">p &lt; 1e-7</span></div>
+          <div class="drift-row"><span class="f">V7</span>  <span class="track"><div style="width:54%"></div></span>   <span class="ks">0.152</span><span class="p">p &lt; 1e-5</span></div>
+          <div class="drift-row"><span class="f">Amount</span><span class="track"><div style="width:22%"></div></span> <span class="ks">0.061</span><span class="p">p &lt; 1e-3</span></div>
+        </div>
+
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ================================================================
+       ROW 3: recent alerts (Overview)
+       ================================================================ -->
+  <section class="row-2" data-tabs="overview">
+    <div class="card" style="grid-column:1/-1">
+      <div class="section-row">
+        <div>
+          <h3>Recent High-Risk Transactions</h3>
+          <div class="card-sub mt-1">Flagged in the last 60 minutes &middot; click a row to open the case file</div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="chip">All channels</span>
+          <span class="chip">Risk &ge; 0.6</span>
+          <button class="btn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M6 12h12M10 18h4"/></svg>
+            Filters
+          </button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Transaction</th>
+              <th>Timestamp</th>
+              <th style="text-align:right">Amount</th>
+              <th>Top Features</th>
+              <th style="text-align:right">Risk</th>
+              <th>Verdict</th>
+              <th>Status</th>
+              <th style="width:40px"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="mono">TX-8A41-3F29</td>
+              <td>14:48:22</td>
+              <td class="right">$4,218.00</td>
+              <td>
+                <span class="chip">V17</span><span class="chip">V14</span><span class="chip">V12</span>
+              </td>
+              <td class="right"><span class="risk high">0.983</span></td>
+              <td><span class="chip ok">fraud</span></td>
+              <td><span class="chip">review queue</span></td>
+              <td><button class="more-btn" aria-label="More"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button></td>
+            </tr>
+            <tr>
+              <td class="mono">TX-9C12-EE07</td>
+              <td>14:45:10</td>
+              <td class="right">$1,992.48</td>
+              <td>
+                <span class="chip">V14</span><span class="chip">V10</span>
+              </td>
+              <td class="right"><span class="risk high">0.941</span></td>
+              <td><span class="chip ok">fraud</span></td>
+              <td><span class="chip">auto-blocked</span></td>
+              <td><button class="more-btn" aria-label="More"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button></td>
+            </tr>
+            <tr>
+              <td class="mono">TX-2B77-0A91</td>
+              <td>14:42:57</td>
+              <td class="right">$872.30</td>
+              <td>
+                <span class="chip">V12</span><span class="chip">V16</span><span class="chip">V4</span>
+              </td>
+              <td class="right"><span class="risk high">0.912</span></td>
+              <td><span class="chip ok">fraud</span></td>
+              <td><span class="chip">auto-blocked</span></td>
+              <td><button class="more-btn" aria-label="More"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button></td>
+            </tr>
+            <tr>
+              <td class="mono">TX-D504-5C18</td>
+              <td>14:39:03</td>
+              <td class="right">$3,104.75</td>
+              <td>
+                <span class="chip">V17</span><span class="chip">V3</span>
+              </td>
+              <td class="right"><span class="risk med">0.772</span></td>
+              <td><span class="chip warn">uncertain</span></td>
+              <td><span class="chip">review queue</span></td>
+              <td><button class="more-btn" aria-label="More"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button></td>
+            </tr>
+            <tr>
+              <td class="mono">TX-6F88-1B23</td>
+              <td>14:35:41</td>
+              <td class="right">$128.99</td>
+              <td>
+                <span class="chip">V11</span><span class="chip">V7</span><span class="chip">Amount</span>
+              </td>
+              <td class="right"><span class="risk med">0.688</span></td>
+              <td><span class="chip warn">uncertain</span></td>
+              <td><span class="chip">review queue</span></td>
+              <td><button class="more-btn" aria-label="More"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button></td>
+            </tr>
+            <tr>
+              <td class="mono">TX-1A05-7E44</td>
+              <td>14:32:14</td>
+              <td class="right">$59.20</td>
+              <td>
+                <span class="chip">V14</span><span class="chip">Amount</span>
+              </td>
+              <td class="right"><span class="risk med">0.602</span></td>
+              <td><span class="chip warn">uncertain</span></td>
+              <td><span class="chip ok">cleared</span></td>
+              <td><button class="more-btn" aria-label="More"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button></td>
+            </tr>
+            <tr>
+              <td class="mono">TX-4E33-D910</td>
+              <td>14:29:58</td>
+              <td class="right">$2,441.60</td>
+              <td>
+                <span class="chip">V12</span><span class="chip">V10</span><span class="chip">V17</span>
+              </td>
+              <td class="right"><span class="risk high">0.874</span></td>
+              <td><span class="chip ok">fraud</span></td>
+              <td><span class="chip">auto-blocked</span></td>
+              <td><button class="more-btn" aria-label="More"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button></td>
+            </tr>
+            <tr>
+              <td class="mono">TX-7B66-2188</td>
+              <td>14:26:30</td>
+              <td class="right">$441.85</td>
+              <td>
+                <span class="chip">V4</span><span class="chip">V11</span>
+              </td>
+              <td class="right"><span class="risk low">0.412</span></td>
+              <td><span class="chip">legit</span></td>
+              <td><span class="chip ok">cleared</span></td>
+              <td><button class="more-btn" aria-label="More"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================================
+       FOOTER: Debate Verdict (Overview, Governance)
+       ================================================================ -->
+  <section class="row-2" data-tabs="overview governance">
+    <div class="card" style="grid-column:1/-1">
+      <div class="verdict">
+
+        <div class="verdict-left">
+          <div class="verdict-head">
+            <div>
+              <h3>Multi-Agent Debate Verdict</h3>
+              <div class="sub" style="margin-top:2px">Round 2 &middot; adjudicated <span class="num">2026-04-24 17:55 UTC</span></div>
+            </div>
+            <span class="winner-badge">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+              Bull wins &middot; 0.78
+            </span>
+          </div>
+
+          <div>
+            <div class="agent-row">
+              <div class="agent-role bull">
+                <span class="ico"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17l9-9M9 8h7v7"/></svg></span>
+                <div>Bull <div class="sub">deploy now</div></div>
+              </div>
+              <div class="agent-bar bull"><div style="width:78%"></div></div>
+              <div class="agent-conf">0.78</div>
+            </div>
+
+            <div class="agent-row">
+              <div class="agent-role bear">
+                <span class="ico"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7l9 9M9 16h7V9"/></svg></span>
+                <div>Bear <div class="sub">threshold &amp; seed risks</div></div>
+              </div>
+              <div class="agent-bar bear"><div style="width:60%"></div></div>
+              <div class="agent-conf">0.60</div>
+            </div>
+
+            <div class="agent-row">
+              <div class="agent-role devil">
+                <span class="ico"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 9h.01M15 9h.01M8 15c.8-1 2.2-1.5 4-1.5s3.2.5 4 1.5"/></svg></span>
+                <div>Devil <div class="sub">blind spots</div></div>
+              </div>
+              <div class="agent-bar devil"><div style="width:55%"></div></div>
+              <div class="agent-conf">0.55</div>
+            </div>
+          </div>
+
+          <div class="substat" style="margin-top:16px">
+            <span><span class="k">Judge confidence</span><span class="v">0.74</span></span>
+            <span><span class="k">&Delta; vs. v1</span><span class="v" style="color:var(--green)">+0.16</span></span>
+            <span><span class="k">Human approval</span><span class="v">not required</span></span>
+          </div>
+        </div>
+
+        <div class="verdict-right">
+          <div class="verdict-head">
+            <div>
+              <h3>Final Deploy Recommendation</h3>
+              <div class="sub" style="margin-top:2px">Preconditions attached</div>
+            </div>
+            <span class="chip ok">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+              green-lit
+            </span>
+          </div>
+
+          <div class="final-pred">
+            Deploy XGBoost with analyst-in-loop review, seed-pinned retraining, threshold re-tuning against FN=$500 / FP=$5, and hourly drift-monitor gated on KS-stat and live F1 below 0.8554.
+          </div>
+
+          <div class="dissent">
+            <div class="label">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              Preserved dissent
+            </div>
+            Devil v2 surfaces three unclosed gaps: (1) concept drift on P(Y|X) is unmeasured; (2) predict_proba calibration at p* &approx; 0.0099 is unverified; (3) the seed-variance CI was computed under the same iid stratified design the KS test falsified. Monitor rather than block.
+          </div>
+
+          <div class="verdict-actions">
+            <button class="btn btn-primary">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+              Promote to production
+            </button>
+            <button class="btn">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>
+              View full report
+            </button>
+            <button class="btn">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l2 2"/></svg>
+              Schedule re-run
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ================================================================
+       ALERTS TAB
+       ================================================================ -->
+  <section class="kpis kpis-4" data-tabs="alerts" aria-label="Alerts KPIs">
+    <div class="kpi">
+      <div class="kpi-label">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.5L2.8 16.1A2 2 0 0 0 4.5 19h14.9a2 2 0 0 0 1.7-2.9L13.7 3.5a2 2 0 0 0-3.4 0z"/><path d="M12 9v5M12 17h.01"/></svg>
+        Open Alerts
+      </div>
+      <div class="kpi-value num">14</div>
+      <div class="kpi-row">
+        <span class="delta warn">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+          +3 vs. 1h
+        </span>
+      </div>
+      <div class="kpi-foot mt-2 small">9 high &middot; 4 medium &middot; 1 low</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 9l6 6M15 9l-6 6"/></svg>
+        Auto-Blocked (24h)
+      </div>
+      <div class="kpi-value num">287</div>
+      <div class="kpi-row">
+        <span class="delta up">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+          +12.1%
+        </span>
+      </div>
+      <div class="kpi-foot mt-2 small">vs. 256 yesterday &middot; <span class="num">$143,500</span> blocked</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l2.5 2.5"/></svg>
+        Avg Time to Resolve
+      </div>
+      <div class="kpi-value num">4<span class="unit">m</span> 12<span class="unit">s</span></div>
+      <div class="kpi-row">
+        <span class="delta up">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+          -38s
+        </span>
+      </div>
+      <div class="kpi-foot mt-2 small">analyst SLA target: <span class="num">5 min</span></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        Escalation Rate
+      </div>
+      <div class="kpi-value num">18.6<span class="unit">%</span></div>
+      <div class="kpi-row">
+        <span class="delta down">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+          -2.3pp
+        </span>
+      </div>
+      <div class="kpi-foot mt-2 small"><span class="num">53</span> of 287 escalated to fraud team</div>
+    </div>
+  </section>
+
+  <section class="row-2" data-tabs="alerts">
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Alert Volume — Last 24 Hours</div>
+          <div class="card-sub">Hourly count of model-flagged transactions</div>
+        </div>
+        <button class="more-btn" aria-label="More">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
+        </button>
+      </div>
+      <div class="card-body">
+        <div class="barchart" id="alertBars"></div>
+        <div class="bc-axis"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:00</span></div>
+        <div class="substat" style="margin-top:14px">
+          <span><span class="k">Peak hour</span><span class="v">12:00 (22)</span></span>
+          <span><span class="k">Quiet hour</span><span class="v">23:00 (7)</span></span>
+          <span><span class="k">Total</span><span class="v">307</span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Resolution Breakdown</div>
+          <div class="card-sub">By status &middot; last 24h</div>
+        </div>
+        <button class="more-btn" aria-label="More">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
+        </button>
+      </div>
+      <div class="card-body">
+        <div class="stack-bar">
+          <div style="width:64%; background:#34d399" title="auto-blocked"></div>
+          <div style="width:18%; background:#fbbf24" title="escalated"></div>
+          <div style="width:13%; background:#60a5fa" title="cleared"></div>
+          <div style="width:5%;  background:#f87171" title="pending"></div>
+        </div>
+        <div class="stack-legend">
+          <span class="item"><span class="swatch" style="background:#34d399"></span>Auto-blocked<span class="num">183</span></span>
+          <span class="item"><span class="swatch" style="background:#fbbf24"></span>Escalated<span class="num">53</span></span>
+          <span class="item"><span class="swatch" style="background:#60a5fa"></span>Cleared<span class="num">37</span></span>
+          <span class="item"><span class="swatch" style="background:#f87171"></span>Pending<span class="num">14</span></span>
+        </div>
+
+        <div style="margin-top:18px; padding-top:14px; border-top:1px solid var(--line)">
+          <div class="card-title" style="margin-bottom:10px">By risk tier</div>
+          <div class="bars">
+            <div class="bar-row"><div class="bar-name">High</div><div class="bar-track"><div class="bar-fill" style="width:78%; background: linear-gradient(90deg,#f87171,#dc2626)"></div></div><div class="bar-val">214</div></div>
+            <div class="bar-row"><div class="bar-name">Med</div><div class="bar-track"><div class="bar-fill" style="width:25%; background: linear-gradient(90deg,#fbbf24,#d97706)"></div></div><div class="bar-val">68</div></div>
+            <div class="bar-row"><div class="bar-name">Low</div><div class="bar-track"><div class="bar-fill" style="width:9%; background: linear-gradient(90deg,#34d399,#059669)"></div></div><div class="bar-val">25</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="row-2" data-tabs="alerts">
+    <div class="card" style="grid-column:1/-1">
+      <div class="section-row">
+        <div>
+          <h3>All Alerts &middot; Last 24 Hours</h3>
+          <div class="card-sub mt-1">Filtered transaction stream &middot; <span class="num">307</span> rows</div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button class="btn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+            Export CSV
+          </button>
+        </div>
+      </div>
+      <div class="filter-bar">
+        <span class="filter-chip on" data-filter="all">All</span>
+        <span class="filter-chip" data-filter="high">High risk</span>
+        <span class="filter-chip" data-filter="med">Medium</span>
+        <span class="filter-chip" data-filter="low">Low</span>
+        <span style="width:1px; background:var(--line); margin: 0 4px"></span>
+        <span class="filter-chip" data-filter="blocked">Auto-blocked</span>
+        <span class="filter-chip" data-filter="review">In review</span>
+        <span class="filter-chip" data-filter="cleared">Cleared</span>
+      </div>
+      <div class="table-wrap">
+        <table id="alertsTable">
+          <thead>
+            <tr>
+              <th>Transaction</th>
+              <th>Time</th>
+              <th style="text-align:right">Amount</th>
+              <th>Top Features</th>
+              <th style="text-align:right">Risk</th>
+              <th>Verdict</th>
+              <th>Status</th>
+              <th>Age</th>
+              <th style="width:40px"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr data-risk="high" data-status="review"><td class="mono">TX-8A41-3F29</td><td>14:48:22</td><td class="right">$4,218.00</td><td><span class="chip">V17</span><span class="chip">V14</span><span class="chip">V12</span></td><td class="right"><span class="risk high">0.983</span></td><td><span class="chip ok">fraud</span></td><td><span class="chip">review queue</span></td><td class="mono">12s</td><td><button class="more-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button></td></tr>
+            <tr data-risk="high" data-status="blocked"><td class="mono">TX-9C12-EE07</td><td>14:45:10</td><td class="right">$1,992.48</td><td><span class="chip">V14</span><span class="chip">V10</span></td><td class="right"><span class="risk high">0.941</span></td><td><span class="chip ok">fraud</span></td><td><span class="chip">auto-blocked</span></td><td class="mono">3m</td><td><button class="more-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button></td></tr>
+            <tr data-risk="high" data-status="blocked"><td class="mono">TX-2B77-0A91</td><td>14:42:57</td><td class="right">$872.30</td><td><span class="chip">V12</span><span class="chip">V16</span><span class="chip">V4</span></td><td class="right"><span class="risk high">0.912</span></td><td><span class="chip ok">fraud</span></td><td><span class="chip">auto-blocked</span></td><td class="mono">5m</td><td><button class="more-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button></td></tr>
+            <tr data-risk="med" data-status="review"><td class="mono">TX-D504-5C18</td><td>14:39:03</td><td class="right">$3,104.75</td><td><span class="chip">V17</span><span class="chip">V3</span></td><td class="right"><span class="risk med">0.772</span></td><td><span class="chip warn">uncertain</span></td><td><span class="chip">review queue</span></td><td class="mono">9m</td><td><button class="more-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button></td></tr>
+            <tr data-risk="med" data-status="review"><td class="mono">TX-6F88-1B23</td><td>14:35:41</td><td class="right">$128.99</td><td><span class="chip">V11</span><span class="chip">V7</span><span class="chip">Amount</span></td><td class="right"><span class="risk med">0.688</span></td><td><span class="chip warn">uncertain</span></td><td><span class="chip">review queue</span></td><td class="mono">13m</td><td><button class="more-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button></td></tr>
+            <tr data-risk="med" data-status="cleared"><td class="mono">TX-1A05-7E44</td><td>14:32:14</td><td class="right">$59.20</td><td><span class="chip">V14</span><span class="chip">Amount</span></td><td class="right"><span class="risk med">0.602</span></td><td><span class="chip warn">uncertain</span></td><td><span class="chip ok">cleared</span></td><td class="mono">16m</td><td><button class="more-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button></td></tr>
+            <tr data-risk="high" data-status="blocked"><td class="mono">TX-4E33-D910</td><td>14:29:58</td><td class="right">$2,441.60</td><td><span class="chip">V12</span><span class="chip">V10</span><span class="chip">V17</span></td><td class="right"><span class="risk high">0.874</span></td><td><span class="chip ok">fraud</span></td><td><span class="chip">auto-blocked</span></td><td class="mono">19m</td><td><button class="more-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button></td></tr>
+            <tr data-risk="low" data-status="cleared"><td class="mono">TX-7B66-2188</td><td>14:26:30</td><td class="right">$441.85</td><td><span class="chip">V4</span><span class="chip">V11</span></td><td class="right"><span class="risk low">0.412</span></td><td><span class="chip">legit</span></td><td><span class="chip ok">cleared</span></td><td class="mono">22m</td><td><button class="more-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button></td></tr>
+            <tr data-risk="high" data-status="blocked"><td class="mono">TX-3D91-A057</td><td>14:22:10</td><td class="right">$5,890.00</td><td><span class="chip">V17</span><span class="chip">V14</span></td><td class="right"><span class="risk high">0.967</span></td><td><span class="chip ok">fraud</span></td><td><span class="chip">auto-blocked</span></td><td class="mono">26m</td><td><button class="more-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button></td></tr>
+            <tr data-risk="med" data-status="review"><td class="mono">TX-5E22-B411</td><td>14:18:43</td><td class="right">$224.99</td><td><span class="chip">V12</span><span class="chip">Amount</span></td><td class="right"><span class="risk med">0.711</span></td><td><span class="chip warn">uncertain</span></td><td><span class="chip">review queue</span></td><td class="mono">30m</td><td><button class="more-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button></td></tr>
+            <tr data-risk="high" data-status="blocked"><td class="mono">TX-AC48-9F03</td><td>14:14:55</td><td class="right">$1,144.32</td><td><span class="chip">V10</span><span class="chip">V17</span></td><td class="right"><span class="risk high">0.928</span></td><td><span class="chip ok">fraud</span></td><td><span class="chip">auto-blocked</span></td><td class="mono">34m</td><td><button class="more-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button></td></tr>
+            <tr data-risk="high" data-status="review"><td class="mono">TX-F718-6C29</td><td>14:11:08</td><td class="right">$3,612.00</td><td><span class="chip">V14</span><span class="chip">V12</span></td><td class="right"><span class="risk high">0.901</span></td><td><span class="chip ok">fraud</span></td><td><span class="chip">review queue</span></td><td class="mono">37m</td><td><button class="more-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button></td></tr>
+            <tr data-risk="low" data-status="cleared"><td class="mono">TX-B232-7D81</td><td>14:07:29</td><td class="right">$78.00</td><td><span class="chip">Amount</span></td><td class="right"><span class="risk low">0.366</span></td><td><span class="chip">legit</span></td><td><span class="chip ok">cleared</span></td><td class="mono">41m</td><td><button class="more-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button></td></tr>
+            <tr data-risk="high" data-status="blocked"><td class="mono">TX-9E73-0E45</td><td>14:03:51</td><td class="right">$2,801.20</td><td><span class="chip">V17</span><span class="chip">V14</span><span class="chip">V12</span></td><td class="right"><span class="risk high">0.954</span></td><td><span class="chip ok">fraud</span></td><td><span class="chip">auto-blocked</span></td><td class="mono">44m</td><td><button class="more-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button></td></tr>
+            <tr data-risk="med" data-status="review"><td class="mono">TX-0F19-A2B6</td><td>13:59:14</td><td class="right">$967.45</td><td><span class="chip">V11</span><span class="chip">V16</span></td><td class="right"><span class="risk med">0.722</span></td><td><span class="chip warn">uncertain</span></td><td><span class="chip">review queue</span></td><td class="mono">49m</td><td><button class="more-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button></td></tr>
+            <tr data-risk="high" data-status="blocked"><td class="mono">TX-7A45-2BC0</td><td>13:55:33</td><td class="right">$5,144.99</td><td><span class="chip">V14</span><span class="chip">V17</span></td><td class="right"><span class="risk high">0.974</span></td><td><span class="chip ok">fraud</span></td><td><span class="chip">auto-blocked</span></td><td class="mono">53m</td><td><button class="more-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================================
+       MODELS TAB
+       ================================================================ -->
+  <section class="row-2" data-tabs="models">
+    <div class="card" style="grid-column:1/-1">
+      <div class="model-card">
+        <div class="model-card-left">
+          <div class="model-title-row">
+            <span class="model-name">XGBoost / fraud-detector</span>
+            <span class="badge">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="6"/></svg>
+              Production
+            </span>
+            <span class="chip">v1.2.0</span>
+          </div>
+          <div class="model-meta">
+            <span><span class="k">Algorithm</span><span class="v">gradient boosted trees</span></span>
+            <span><span class="k">Deployed</span><span class="v">2026-04-24</span></span>
+            <span><span class="k">Owner</span><span class="v">Ada Singh</span></span>
+            <span><span class="k">Region</span><span class="v">us-east-1</span></span>
+          </div>
+
+          <div class="metric-grid">
+            <div class="metric-cell"><div class="l">F1</div><div class="v">0.8586</div></div>
+            <div class="metric-cell"><div class="l">AUC</div><div class="v">0.9684</div></div>
+            <div class="metric-cell"><div class="l">Precision</div><div class="v">0.8817</div></div>
+            <div class="metric-cell"><div class="l">Recall</div><div class="v">0.8367</div></div>
+          </div>
+
+          <div class="substat" style="margin-top:14px">
+            <span><span class="k">Train rows</span><span class="v">227,845</span></span>
+            <span><span class="k">Test rows</span><span class="v">56,962</span></span>
+            <span><span class="k">F1 gate</span><span class="v">&ge; 0.85</span></span>
+            <span><span class="k">CI lower</span><span class="v">0.8554</span></span>
+          </div>
+        </div>
+
+        <div class="model-card-right">
+          <div class="card-title" style="margin-bottom:8px">Hyperparameters</div>
+          <div class="hyper">
+            <div class="hyper-row"><span class="k">n_estimators</span><span class="v">200</span></div>
+            <div class="hyper-row"><span class="k">max_depth</span><span class="v">6</span></div>
+            <div class="hyper-row"><span class="k">learning_rate</span><span class="v">0.10</span></div>
+            <div class="hyper-row"><span class="k">scale_pos_weight</span><span class="v">577.29</span></div>
+            <div class="hyper-row"><span class="k">tree_method</span><span class="v">hist</span></div>
+            <div class="hyper-row"><span class="k">eval_metric</span><span class="v">logloss</span></div>
+            <div class="hyper-row"><span class="k">random_state</span><span class="v">42</span></div>
+            <div class="hyper-row"><span class="k">n_jobs</span><span class="v">-1</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="row-2" data-tabs="models">
+    <div class="card" style="grid-column:1/-1">
+      <div class="section-row">
+        <div>
+          <h3>Model Version History</h3>
+          <div class="card-sub mt-1">Last 4 promoted models &middot; F1 measured on the same held-out test set</div>
+        </div>
+        <button class="btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+          Compare versions
+        </button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Version</th>
+              <th>Promoted</th>
+              <th style="text-align:right">F1</th>
+              <th style="text-align:right">AUC</th>
+              <th style="text-align:right">Recall</th>
+              <th>Algorithm</th>
+              <th>Status</th>
+              <th style="width:90px">Trend</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="mono">v1.2.0</td>
+              <td>2026-04-24</td>
+              <td class="right">0.8586</td>
+              <td class="right">0.9684</td>
+              <td class="right">0.8367</td>
+              <td>XGBoost</td>
+              <td><span class="chip ok">production</span></td>
+              <td><svg class="spark" viewBox="0 0 70 22" preserveAspectRatio="none"><polyline fill="none" stroke="#34d399" stroke-width="1.5" points="0,18 18,15 36,11 54,7 70,4"/></svg></td>
+            </tr>
+            <tr>
+              <td class="mono">v1.1.0</td>
+              <td>2026-03-12</td>
+              <td class="right">0.8439</td>
+              <td class="right">0.9578</td>
+              <td class="right">0.8163</td>
+              <td>XGBoost</td>
+              <td><span class="chip">archived</span></td>
+              <td><svg class="spark" viewBox="0 0 70 22" preserveAspectRatio="none"><polyline fill="none" stroke="#60a5fa" stroke-width="1.5" points="0,18 18,17 36,14 54,10 70,8"/></svg></td>
+            </tr>
+            <tr>
+              <td class="mono">v1.0.0</td>
+              <td>2026-01-08</td>
+              <td class="right">0.8217</td>
+              <td class="right">0.9421</td>
+              <td class="right">0.7857</td>
+              <td>RandomForest</td>
+              <td><span class="chip">archived</span></td>
+              <td><svg class="spark" viewBox="0 0 70 22" preserveAspectRatio="none"><polyline fill="none" stroke="#60a5fa" stroke-width="1.5" points="0,20 18,18 36,15 54,13 70,12"/></svg></td>
+            </tr>
+            <tr>
+              <td class="mono">v0.9.0</td>
+              <td>2025-11-22</td>
+              <td class="right">0.7841</td>
+              <td class="right">0.9218</td>
+              <td class="right">0.7449</td>
+              <td>LogReg</td>
+              <td><span class="chip">archived</span></td>
+              <td><svg class="spark" viewBox="0 0 70 22" preserveAspectRatio="none"><polyline fill="none" stroke="#a5aab6" stroke-width="1.5" points="0,21 18,19 36,17 54,15 70,15"/></svg></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================================
+       REPORTS TAB
+       ================================================================ -->
+  <section class="kpis kpis-4" data-tabs="reports" aria-label="Reports KPIs">
+    <div class="kpi">
+      <div class="kpi-label">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>
+        Pipeline Runs (30d)
+      </div>
+      <div class="kpi-value num">42</div>
+      <div class="kpi-row"><span class="delta up"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>+8</span></div>
+      <div class="kpi-foot mt-2 small"><span class="num">100%</span> success rate</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Avg Cost / Run
+      </div>
+      <div class="kpi-value num">$5.51</div>
+      <div class="kpi-row"><span class="delta flat">±$0.04</span></div>
+      <div class="kpi-foot mt-2 small">round 1 only &middot; <span class="num">~262k</span> tokens</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg>
+        Avg Wall Time
+      </div>
+      <div class="kpi-value num">9<span class="unit">m</span> 41<span class="unit">s</span></div>
+      <div class="kpi-row"><span class="delta up"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>-1m 12s</div>
+      <div class="kpi-foot mt-2 small">Python: 1m 50s &middot; debate: 7m 51s</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="M22 4L12 14l-3-3"/></svg>
+        Approvals Triggered
+      </div>
+      <div class="kpi-value num">7 <span class="unit">/ 42</span></div>
+      <div class="kpi-row"><span class="delta down"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>-3 vs. last 30d</span></div>
+      <div class="kpi-foot mt-2 small">16.7% of runs require human gate</div>
+    </div>
+  </section>
+
+  <section class="row-2" data-tabs="reports">
+    <div class="card" style="grid-column:1/-1">
+      <div class="section-row">
+        <div>
+          <h3>Recent Pipeline Runs</h3>
+          <div class="card-sub mt-1">All runs share <span class="num">random_state=42</span> &middot; F1 stable to 4 decimals</div>
+        </div>
+        <button class="btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M6 12h12M10 18h4"/></svg>
+          Filters
+        </button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Run ID</th>
+              <th>Started</th>
+              <th>Duration</th>
+              <th style="text-align:right">F1</th>
+              <th style="text-align:right">Cost</th>
+              <th>Verdict</th>
+              <th>Approval</th>
+              <th>Status</th>
+              <th style="width:40px"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="mono">run-0042</td>
+              <td>2026-04-25 14:00</td>
+              <td class="mono">9m 28s</td>
+              <td class="right">0.8586</td>
+              <td class="right">$5.51</td>
+              <td><span class="chip ok">bull (0.74)</span></td>
+              <td><span class="chip">not required</span></td>
+              <td><span class="chip ok">success</span></td>
+              <td><button class="more-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button></td>
+            </tr>
+            <tr>
+              <td class="mono">run-0041</td>
+              <td>2026-04-25 08:00</td>
+              <td class="mono">9m 41s</td>
+              <td class="right">0.8586</td>
+              <td class="right">$5.49</td>
+              <td><span class="chip ok">bull (0.71)</span></td>
+              <td><span class="chip">not required</span></td>
+              <td><span class="chip ok">success</span></td>
+              <td><button class="more-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button></td>
+            </tr>
+            <tr>
+              <td class="mono">run-0040</td>
+              <td>2026-04-24 23:00</td>
+              <td class="mono">10m 04s</td>
+              <td class="right">0.8586</td>
+              <td class="right">$5.62</td>
+              <td><span class="chip warn">devil (0.58)</span></td>
+              <td><span class="chip warn">required</span></td>
+              <td><span class="chip ok">success</span></td>
+              <td><button class="more-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button></td>
+            </tr>
+            <tr>
+              <td class="mono">run-0039</td>
+              <td>2026-04-24 20:00</td>
+              <td class="mono">9m 33s</td>
+              <td class="right">0.8586</td>
+              <td class="right">$5.50</td>
+              <td><span class="chip ok">bull (0.69)</span></td>
+              <td><span class="chip">not required</span></td>
+              <td><span class="chip ok">success</span></td>
+              <td><button class="more-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button></td>
+            </tr>
+            <tr>
+              <td class="mono">run-0038</td>
+              <td>2026-04-24 17:00</td>
+              <td class="mono">9m 22s</td>
+              <td class="right">0.8412</td>
+              <td class="right">$5.48</td>
+              <td><span class="chip warn">bear (0.63)</span></td>
+              <td><span class="chip warn">required</span></td>
+              <td><span class="chip ok">success</span></td>
+              <td><button class="more-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button></td>
+            </tr>
+            <tr>
+              <td class="mono">run-0037</td>
+              <td>2026-04-24 14:00</td>
+              <td class="mono">9m 51s</td>
+              <td class="right">0.8586</td>
+              <td class="right">$5.54</td>
+              <td><span class="chip ok">bull (0.72)</span></td>
+              <td><span class="chip">not required</span></td>
+              <td><span class="chip ok">success</span></td>
+              <td><button class="more-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="row-2" data-tabs="reports">
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Cost per Run &middot; Last 14 Days</div>
+          <div class="card-sub">USD at Claude Opus list price &middot; per pipeline run</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="runs-cost-chart">
+          <svg viewBox="0 0 600 180" preserveAspectRatio="none" width="100%" height="100%">
+            <defs>
+              <linearGradient id="gradCost" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#a78bfa" stop-opacity="0.32"/>
+                <stop offset="100%" stop-color="#a78bfa" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <g stroke="rgba(255,255,255,0.05)" stroke-width="1">
+              <line x1="30" y1="20"  x2="590" y2="20"/>
+              <line x1="30" y1="60"  x2="590" y2="60"/>
+              <line x1="30" y1="100" x2="590" y2="100"/>
+              <line x1="30" y1="140" x2="590" y2="140"/>
+            </g>
+            <g fill="#70758a" font-family="JetBrains Mono, ui-monospace, monospace" font-size="9">
+              <text x="26" y="23" text-anchor="end">$10</text>
+              <text x="26" y="63" text-anchor="end">$8</text>
+              <text x="26" y="103" text-anchor="end">$6</text>
+              <text x="26" y="143" text-anchor="end">$4</text>
+            </g>
+            <path d="M 30,108 L 70,112 L 110,108 L 150,104 L 190,110 L 230,106 L 270,108 L 310,90 L 350,96 L 390,100 L 430,94 L 470,98 L 510,108 L 550,110 L 590,108 L 590,160 L 30,160 Z" fill="url(#gradCost)"/>
+            <path d="M 30,108 L 70,112 L 110,108 L 150,104 L 190,110 L 230,106 L 270,108 L 310,90 L 350,96 L 390,100 L 430,94 L 470,98 L 510,108 L 550,110 L 590,108" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <g fill="#a78bfa">
+              <circle cx="310" cy="90" r="3.5"/>
+            </g>
+            <g fill="#fbbf24">
+              <circle cx="310" cy="90" r="6" fill="none" stroke="#fbbf24" stroke-width="1.2"/>
+            </g>
+            <text x="310" y="76" fill="#fbbf24" font-family="JetBrains Mono, ui-monospace, monospace" font-size="9.5" text-anchor="middle">round 2 introduced</text>
+          </svg>
+        </div>
+        <div class="bc-axis"><span>Apr 12</span><span>Apr 18</span><span>Apr 25</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Cost Breakdown &middot; This Run</div>
+          <div class="card-sub">Token usage by agent &middot; Opus list price</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="bars">
+          <div class="bar-row"><div class="bar-name">d-eng</div><div class="bar-track"><div class="bar-fill" style="width:42%; background: linear-gradient(90deg,#60a5fa,#22d3ee)"></div></div><div class="bar-val">$0.59</div></div>
+          <div class="bar-row"><div class="bar-name">eda</div><div class="bar-track"><div class="bar-fill" style="width:48%; background: linear-gradient(90deg,#60a5fa,#22d3ee)"></div></div><div class="bar-val">$0.66</div></div>
+          <div class="bar-row"><div class="bar-name">model</div><div class="bar-track"><div class="bar-fill" style="width:46%; background: linear-gradient(90deg,#60a5fa,#22d3ee)"></div></div><div class="bar-val">$0.64</div></div>
+          <div class="bar-row"><div class="bar-name">drift</div><div class="bar-track"><div class="bar-fill" style="width:46%; background: linear-gradient(90deg,#60a5fa,#22d3ee)"></div></div><div class="bar-val">$0.64</div></div>
+          <div class="bar-row"><div class="bar-name">bull</div><div class="bar-track"><div class="bar-fill" style="width:45%; background: linear-gradient(90deg,#34d399,#059669)"></div></div><div class="bar-val">$0.62</div></div>
+          <div class="bar-row"><div class="bar-name">bear</div><div class="bar-track"><div class="bar-fill" style="width:52%; background: linear-gradient(90deg,#f87171,#dc2626)"></div></div><div class="bar-val">$0.72</div></div>
+          <div class="bar-row"><div class="bar-name">devil</div><div class="bar-track"><div class="bar-fill" style="width:50%; background: linear-gradient(90deg,#a78bfa,#7c3aed)"></div></div><div class="bar-val">$0.69</div></div>
+          <div class="bar-row"><div class="bar-name">judge</div><div class="bar-track"><div class="bar-fill" style="width:48%; background: linear-gradient(90deg,#fbbf24,#d97706)"></div></div><div class="bar-val">$0.67</div></div>
+        </div>
+        <div class="substat" style="margin-top:14px; padding-top:14px; border-top:1px solid var(--line)">
+          <span><span class="k">Round 1</span><span class="v">$5.51</span></span>
+          <span><span class="k">Round 2</span><span class="v">$3.28</span></span>
+          <span><span class="k">Total</span><span class="v">$8.79</span></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================================
+       GOVERNANCE TAB
+       ================================================================ -->
+  <section data-tabs="governance" style="margin-bottom:16px">
+    <div class="audit-grid">
+      <div class="audit-stat">
+        <div class="l">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+          Agents Tracked
+        </div>
+        <div class="v">8</div>
+        <div class="s">data-eng, eda, modeler, drift, bull, bear, devil, judge</div>
+      </div>
+      <div class="audit-stat">
+        <div class="l">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          Trace Entries
+        </div>
+        <div class="v">27</div>
+        <div class="s">all start + success pairs accounted for</div>
+      </div>
+      <div class="audit-stat">
+        <div class="l">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Verdicts Issued
+        </div>
+        <div class="v">2</div>
+        <div class="s">v1: devil &middot; v2: bull (override documented)</div>
+      </div>
+      <div class="audit-stat">
+        <div class="l">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+          Approval Overrides
+        </div>
+        <div class="v">1</div>
+        <div class="s">judge v2 &middot; stale rel_delta drift flag</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="row-2" data-tabs="governance">
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Trace Timeline &middot; Last Run</div>
+          <div class="card-sub"><span class="num">trace.jsonl</span> &middot; agent actions and orchestrator transitions</div>
+        </div>
+        <button class="btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+          Download trace
+        </button>
+      </div>
+      <div class="card-body" style="padding-top:12px">
+        <div class="trace-list">
+          <div class="trace-row start"><div class="trace-time">07:00:51</div><div class="trace-marker"><span class="ring"></span></div><div class="trace-content"><div class="row-1">data-engineer <span class="agent-tag">start</span></div><div class="row-2">creditcard.csv -> data/clean.parquet</div></div></div>
+          <div class="trace-row success"><div class="trace-time">07:01:36</div><div class="trace-marker"><span class="ring"></span></div><div class="trace-content"><div class="row-1">data-engineer <span class="agent-tag">success</span></div><div class="row-2">284,807 rows &middot; 0 nulls &middot; 72.5 MB parquet</div></div></div>
+          <div class="trace-row start"><div class="trace-time">07:12:14</div><div class="trace-marker"><span class="ring"></span></div><div class="trace-content"><div class="row-1">eda-analyst <span class="agent-tag">start</span></div><div class="row-2">clean.parquet -> eda_summary.json + 4 charts</div></div></div>
+          <div class="trace-row success"><div class="trace-time">07:13:48</div><div class="trace-marker"><span class="ring"></span></div><div class="trace-content"><div class="row-1">eda-analyst <span class="agent-tag">success</span></div><div class="row-2">top feature: V17 (|corr| = 0.327)</div></div></div>
+          <div class="trace-row start"><div class="trace-time">07:15:07</div><div class="trace-marker"><span class="ring"></span></div><div class="trace-content"><div class="row-1">prediction-modeler <span class="agent-tag">start</span></div><div class="row-2">XGBoost + scale_pos_weight, stratified 80/20, target F1 &ge; 0.85</div></div></div>
+          <div class="trace-row success"><div class="trace-time">07:15:55</div><div class="trace-marker"><span class="ring"></span></div><div class="trace-content"><div class="row-1">prediction-modeler <span class="agent-tag">success</span></div><div class="row-2">F1 = 0.8586 &middot; AUC = 0.9684 &middot; first attempt</div></div></div>
+          <div class="trace-row warn"><div class="trace-time">07:18:07</div><div class="trace-marker"><span class="ring"></span></div><div class="trace-content"><div class="row-1">drift-monitor <span class="agent-tag">success</span></div><div class="row-2">drift_detected = true (rel_delta on V3) &middot; flag retained for audit</div></div></div>
+          <div class="trace-row note"><div class="trace-time">07:22:47</div><div class="trace-marker"><span class="ring"></span></div><div class="trace-content"><div class="row-1">bull-analyst <span class="agent-tag">success</span></div><div class="row-2">ArgumentObject &middot; confidence 0.62 &middot; 6 evidence items</div></div></div>
+          <div class="trace-row note"><div class="trace-time">07:23:38</div><div class="trace-marker"><span class="ring"></span></div><div class="trace-content"><div class="row-1">bear-analyst <span class="agent-tag">success</span></div><div class="row-2">ArgumentObject &middot; confidence 0.74 &middot; 6 evidence items</div></div></div>
+          <div class="trace-row note"><div class="trace-time">07:25:27</div><div class="trace-marker"><span class="ring"></span></div><div class="trace-content"><div class="row-1">devils-advocate <span class="agent-tag">success</span></div><div class="row-2">ArgumentObject &middot; confidence 0.80 &middot; 6 blind spots</div></div></div>
+          <div class="trace-row success"><div class="trace-time">07:26:47</div><div class="trace-marker"><span class="ring"></span></div><div class="trace-content"><div class="row-1">judge <span class="agent-tag">v1 verdict</span></div><div class="row-2">winning = devil &middot; conf 0.58 &middot; human approval required</div></div></div>
+          <div class="trace-row note"><div class="trace-time">17:48:01</div><div class="trace-marker"><span class="ring"></span></div><div class="trace-content"><div class="row-1">drift-monitor <span class="agent-tag">remediation</span></div><div class="row-2">shuffle KS = 0/29 &middot; time-median KS = 29/29</div></div></div>
+          <div class="trace-row note"><div class="trace-time">17:49:30</div><div class="trace-marker"><span class="ring"></span></div><div class="trace-content"><div class="row-1">prediction-modeler <span class="agent-tag">remediation</span></div><div class="row-2">20-seed F1: mean 0.8659 &middot; CI [0.8554, 0.8764]</div></div></div>
+          <div class="trace-row success"><div class="trace-time">17:55:49</div><div class="trace-marker"><span class="ring"></span></div><div class="trace-content"><div class="row-1">judge <span class="agent-tag">v2 verdict</span></div><div class="row-2">winning = bull &middot; conf 0.74 &middot; approval override documented</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Debate Round Summary</div>
+          <div class="card-sub">Six ArgumentObjects across two rounds</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="seeds-stats" style="margin-bottom:12px">
+          <span>round 1 winner <b style="color:var(--violet)">devil</b></span>
+          <span>round 2 winner <b style="color:var(--green)">bull</b></span>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:8px">
+          <div class="agent-mini bull">
+            <div class="agent-mini-head">
+              <span class="agent-mini-role">
+                <span class="ico"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17l9-9M9 8h7v7"/></svg></span>
+                Bull v2
+              </span>
+              <span class="agent-mini-conf" style="color:var(--green)">0.78</span>
+            </div>
+            <div class="agent-mini-claim">CI [0.8554, 0.8764] both endpoints clear 0.85; EV +$40,945 / 0.4-day slice; rel_delta artifact confirmed.</div>
+            <div class="agent-mini-tag">vs. v1 +0.16</div>
+          </div>
+
+          <div class="agent-mini bear">
+            <div class="agent-mini-head">
+              <span class="agent-mini-role">
+                <span class="ico"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7l9 9M9 16h7V9"/></svg></span>
+                Bear v2
+              </span>
+              <span class="agent-mini-conf" style="color:var(--red)">0.60</span>
+            </div>
+            <div class="agent-mini-claim">Position narrowed: deploy with threshold tuning + seed pin; 25% of seeds below bar; KS 29/29 real drift.</div>
+            <div class="agent-mini-tag">vs. v1 -0.14 (position flip)</div>
+          </div>
+
+          <div class="agent-mini devil">
+            <div class="agent-mini-head">
+              <span class="agent-mini-role">
+                <span class="ico"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 9h.01M15 9h.01M8 15c.8-1 2.2-1.5 4-1.5s3.2.5 4 1.5"/></svg></span>
+                Devil v2
+              </span>
+              <span class="agent-mini-conf" style="color:var(--violet)">0.55</span>
+            </div>
+            <div class="agent-mini-claim">3/3 v1 concerns resolved; new gaps: P(Y|X) concept drift, predict_proba calibration, temporal-split CV.</div>
+            <div class="agent-mini-tag">vs. v1 -0.25 (concedes ground)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- Toast container -->
+<div class="toast-wrap" id="toastWrap" aria-live="polite" aria-atomic="true"></div>
+
+<!-- ================================================================
+     SCRIPT
+     ================================================================ -->
+<script>
+(function () {
+  // --- Number formatting -------------------------------------------------
+  const fmt  = (n) => n.toLocaleString("en-US");
+  const fmt0 = (n) => Math.round(n).toLocaleString("en-US");
+  const pct  = (n, d = 1) => (n * 100).toFixed(d) + "%";
+
+  // --- 24h synthetic timeseries (internally consistent with project outputs)
+  const hours = [
+    {h: 0,  txn: 2800,  att: 8,  caught: 7,  fp: 0},
+    {h: 1,  txn: 2400,  att: 7,  caught: 6,  fp: 0},
+    {h: 2,  txn: 2100,  att: 9,  caught: 7,  fp: 1},
+    {h: 3,  txn: 1900,  att: 12, caught: 10, fp: 0},
+    {h: 4,  txn: 2200,  att: 11, caught: 9,  fp: 0},
+    {h: 5,  txn: 2900,  att: 10, caught: 8,  fp: 1},
+    {h: 6,  txn: 4100,  att: 9,  caught: 8,  fp: 0},
+    {h: 7,  txn: 5800,  att: 13, caught: 11, fp: 1},
+    {h: 8,  txn: 7200,  att: 16, caught: 13, fp: 0},
+    {h: 9,  txn: 8600,  att: 19, caught: 16, fp: 1},
+    {h: 10, txn: 9800,  att: 22, caught: 18, fp: 1},
+    {h: 11, txn: 10500, att: 24, caught: 20, fp: 1},
+    {h: 12, txn: 11100, att: 25, caught: 21, fp: 1},
+    {h: 13, txn: 10800, att: 24, caught: 20, fp: 0},
+    {h: 14, txn: 10400, att: 23, caught: 19, fp: 1},
+    {h: 15, txn: 9800,  att: 22, caught: 19, fp: 0},
+    {h: 16, txn: 9000,  att: 20, caught: 17, fp: 1},
+    {h: 17, txn: 8500,  att: 19, caught: 16, fp: 0},
+    {h: 18, txn: 7600,  att: 17, caught: 14, fp: 0},
+    {h: 19, txn: 6700,  att: 15, caught: 13, fp: 1},
+    {h: 20, txn: 5500,  att: 13, caught: 11, fp: 0},
+    {h: 21, txn: 4400,  att: 11, caught: 9,  fp: 0},
+    {h: 22, txn: 3500,  att: 9,  caught: 8,  fp: 0},
+    {h: 23, txn: 2800,  att: 8,  caught: 7,  fp: 0},
+  ];
+
+  // --- Area chart layout --------------------------------------------------
+  const CHART_W = 800, CHART_H = 260;
+  const PAD_L = 40, PAD_R = 10, PAD_T = 20, PAD_B = 30;
+  const innerW = CHART_W - PAD_L - PAD_R;
+  const innerH = CHART_H - PAD_T - PAD_B;
+  const yMax = 14000;      // txn scale
+  const attMax = 30;       // fraud-attempts scale (separate axis)
+  const x = (i) => PAD_L + (innerW * i / (hours.length - 1));
+  const yT = (v) => PAD_T + innerH * (1 - v / yMax);
+  const yA = (v) => PAD_T + innerH * (1 - v / attMax);
+
+  // Build txn path
+  let pT = `M ${x(0)} ${yT(hours[0].txn)}`;
+  let pA = `M ${x(0)} ${yA(hours[0].att)}`;
+  for (let i = 1; i < hours.length; i++) {
+    pT += ` L ${x(i)} ${yT(hours[i].txn)}`;
+    pA += ` L ${x(i)} ${yA(hours[i].att)}`;
+  }
+  const pTArea = pT + ` L ${x(hours.length - 1)} ${PAD_T + innerH} L ${x(0)} ${PAD_T + innerH} Z`;
+  const pAArea = pA + ` L ${x(hours.length - 1)} ${PAD_T + innerH} L ${x(0)} ${PAD_T + innerH} Z`;
+  document.getElementById("lineTxn").setAttribute("d", pT);
+  document.getElementById("areaTxn").setAttribute("d", pTArea);
+  document.getElementById("lineFraud").setAttribute("d", pA);
+  document.getElementById("areaFraud").setAttribute("d", pAArea);
+
+  // Caught dots (along the same fraud-attempts y scale)
+  const dots = document.getElementById("caughtDots");
+  hours.forEach((d, i) => {
+    const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    c.setAttribute("cx", x(i));
+    c.setAttribute("cy", yA(d.caught));
+    c.setAttribute("r", 2.8);
+    dots.appendChild(c);
+  });
+
+  // x-axis labels (every 3h)
+  const axisX = document.getElementById("axisX");
+  hours.forEach((d, i) => {
+    const span = document.createElement("span");
+    span.textContent = (i % 3 === 0) ? String(d.h).padStart(2, "0") + ":00" : "";
+    axisX.appendChild(span);
+  });
+
+  // --- Chart hover --------------------------------------------------------
+  const areaWrap = document.getElementById("areaWrap");
+  const svg = document.getElementById("areaChart");
+  const hoverLine = document.getElementById("hoverLine");
+  const dotTxn = document.getElementById("dotTxn");
+  const dotFraud = document.getElementById("dotFraud");
+  const tooltip = document.getElementById("tooltip");
+  const tipHour = document.getElementById("tipHour");
+  const tipTxn = document.getElementById("tipTxn");
+  const tipAtt = document.getElementById("tipAtt");
+  const tipCaught = document.getElementById("tipCaught");
+  const tipRecall = document.getElementById("tipRecall");
+
+  function onMove(evt) {
+    const rect = svg.getBoundingClientRect();
+    const px = evt.clientX - rect.left;
+    // Map pixel back to chart coords using viewBox scale
+    const scaleX = CHART_W / rect.width;
+    const cx = px * scaleX;
+    // Find nearest bin
+    let best = 0, bestDist = Infinity;
+    for (let i = 0; i < hours.length; i++) {
+      const dx = Math.abs(x(i) - cx);
+      if (dx < bestDist) { bestDist = dx; best = i; }
+    }
+    const hx = x(best);
+    hoverLine.setAttribute("x1", hx);
+    hoverLine.setAttribute("x2", hx);
+    hoverLine.setAttribute("y1", PAD_T);
+    hoverLine.setAttribute("y2", PAD_T + innerH);
+    const dTxn = hours[best].txn, dAtt = hours[best].att, dCaught = hours[best].caught;
+    dotTxn.setAttribute("cx", hx);
+    dotTxn.setAttribute("cy", yT(dTxn));
+    dotFraud.setAttribute("cx", hx);
+    dotFraud.setAttribute("cy", yA(dAtt));
+    areaWrap.classList.add("on");
+    // Tooltip placement (convert chart x back to css px)
+    const cssX = hx / scaleX;
+    tooltip.style.left = cssX + "px";
+    tooltip.style.top = (yT(dTxn) / (CHART_H / rect.height) - 8) + "px";
+    tipHour.textContent = String(hours[best].h).padStart(2, "0") + ":00 – " + String((hours[best].h + 1) % 24).padStart(2, "0") + ":00";
+    tipTxn.textContent = fmt(dTxn);
+    tipAtt.textContent = fmt(dAtt);
+    tipCaught.textContent = fmt(dCaught);
+    tipRecall.textContent = pct(dCaught / dAtt, 1);
+  }
+  function onLeave() { areaWrap.classList.remove("on"); }
+  areaWrap.addEventListener("mousemove", onMove);
+  areaWrap.addEventListener("mouseleave", onLeave);
+
+  // --- Seed histogram -----------------------------------------------------
+  const seedF1 = [0.8495, 0.8866, 0.8646, 0.8936, 0.8571, 0.8791, 0.8254,
+                  0.8865, 0.8901, 0.9000, 0.8617, 0.8936, 0.8821, 0.8261,
+                  0.8172, 0.8404, 0.8854, 0.8660, 0.8508, 0.8617];
+  const lo = 0.80, hi = 0.91;
+  const hist = document.getElementById("hist");
+  const threshold = document.getElementById("histThreshold");
+  seedF1.slice().sort((a,b) => a - b).forEach((v) => {
+    const el = document.createElement("div");
+    el.className = "hist-bar" + (v < 0.85 ? " below" : "");
+    const h = ((v - lo) / (hi - lo)) * 100;
+    el.style.height = Math.max(6, h) + "%";
+    el.title = "F1 = " + v.toFixed(4);
+    hist.appendChild(el);
+  });
+  // Position the 0.85 threshold line
+  const yTh = 100 - ((0.85 - lo) / (hi - lo)) * 100;
+  threshold.style.bottom = (100 - yTh) + "%";
+
+  // --- Live timestamp in subtitle ----------------------------------------
+  function updateHeadTimestamp() {
+    const headSub = document.querySelector(".page-head .sub");
+    if (!headSub) return;
+    let live = headSub.querySelector("[data-live]");
+    if (!live) {
+      live = document.createElement("span");
+      live.dataset.live = "1";
+      live.style.marginLeft = "8px";
+      live.style.color = "var(--fg-3)";
+      headSub.appendChild(live);
+    }
+    const now = new Date();
+    const ts = now.toISOString().replace("T", " ").slice(0, 16) + " UTC";
+    live.innerHTML = '&middot; updated <strong style="color:var(--fg-2)">' + ts + '</strong>';
+  }
+  updateHeadTimestamp();
+
+  // ========================================================================
+  // Toast system
+  // ========================================================================
+  const TOAST_ICONS = {
+    success: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>',
+    warn:    '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>',
+    info:    '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>'
+  };
+  function toast({ title, desc, kind = "info" } = {}) {
+    const wrap = document.getElementById("toastWrap");
+    if (!wrap) return;
+    const el = document.createElement("div");
+    el.className = "toast " + (kind === "info" ? "" : kind);
+    el.innerHTML =
+      '<span class="t-ico">' + (TOAST_ICONS[kind] || TOAST_ICONS.info) + '</span>' +
+      '<div class="t-body"><div class="t-title">' + title + '</div>' +
+      (desc ? '<div class="t-desc">' + desc + '</div>' : '') + '</div>' +
+      '<button class="t-close" aria-label="Dismiss"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>';
+    wrap.appendChild(el);
+    requestAnimationFrame(() => el.classList.add("show"));
+    const dismiss = () => {
+      el.classList.remove("show");
+      setTimeout(() => el.remove(), 240);
+    };
+    el.querySelector(".t-close").addEventListener("click", dismiss);
+    setTimeout(dismiss, 3600);
+  }
+
+  // ========================================================================
+  // Helpers to find buttons by text content
+  // ========================================================================
+  function findBtn(root, text) {
+    return [...root.querySelectorAll("button")].find(b => b.textContent.trim().startsWith(text));
+  }
+
+  // ========================================================================
+  // Header actions: Refresh / Export / Deploy
+  // ========================================================================
+  const refreshBtn = findBtn(document.querySelector(".head-actions"), "Refresh");
+  if (refreshBtn) {
+    refreshBtn.addEventListener("click", () => {
+      const svgEl = refreshBtn.querySelector("svg");
+      if (svgEl) svgEl.classList.add("spin");
+      refreshBtn.disabled = true;
+      setTimeout(() => {
+        if (svgEl) svgEl.classList.remove("spin");
+        refreshBtn.disabled = false;
+        updateHeadTimestamp();
+        toast({ title: "Dashboard refreshed", desc: "Metrics synced from the live scoring pipeline.", kind: "success" });
+      }, 850);
+    });
+  }
+
+  const exportBtn = findBtn(document.querySelector(".head-actions"), "Export");
+  if (exportBtn) {
+    exportBtn.addEventListener("click", () => {
+      const snapshot = {
+        generated_at: new Date().toISOString(),
+        kpis: {
+          f1: 0.8586,
+          fraud_captured_24h: 307,
+          fraud_attempted_24h: 366,
+          recall_24h: 0.8388,
+          loss_prevented_usd: 153500,
+          fpr: 0.00019,
+          judge_confidence: 0.74
+        },
+        confusion_matrix: { tn: 56853, fp: 11, fn: 16, tp: 82 },
+        top_features: [
+          { name: "V17", abs_corr: 0.3265 },
+          { name: "V14", abs_corr: 0.3025 },
+          { name: "V12", abs_corr: 0.2606 },
+          { name: "V10", abs_corr: 0.2169 }
+        ],
+        seed_variance: { mean: 0.8659, std: 0.0249, ci95: [0.8554, 0.8764], seeds_above_bar: 15 },
+        drift: { method: "ks_2samp", time_median_significant: 29, shuffle_significant: 0 },
+        verdict: { winning_argument: "bull", confidence: 0.74, human_approval_required: false },
+        hourly: hours
+      };
+      const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "fraudiq-snapshot-" + new Date().toISOString().slice(0, 10) + ".json";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast({ title: "Snapshot exported", desc: "fraudiq-snapshot-" + new Date().toISOString().slice(0, 10) + ".json downloaded.", kind: "success" });
+    });
+  }
+
+  const deployBtn = findBtn(document.querySelector(".head-actions"), "Deploy");
+  if (deployBtn) {
+    deployBtn.addEventListener("click", () => {
+      toast({ title: "Deployment queued", desc: "XGBoost v1.2.1 will roll out behind analyst review in 2 minutes.", kind: "success" });
+    });
+  }
+
+  // ========================================================================
+  // Verdict footer actions
+  // ========================================================================
+  const promoteBtn = findBtn(document, "Promote");
+  if (promoteBtn) {
+    promoteBtn.addEventListener("click", () => {
+      toast({ title: "Promotion queued", desc: "Model will replace production after KS-stat and live F1 checks.", kind: "success" });
+    });
+  }
+  const viewReportBtn = findBtn(document, "View full");
+  if (viewReportBtn) {
+    viewReportBtn.addEventListener("click", () => {
+      // sibling file in outputs/
+      try {
+        const w = window.open("impact_report.md", "_blank");
+        if (!w) throw new Error("blocked");
+        toast({ title: "Opening impact_report.md", desc: "Sibling file in outputs/." });
+      } catch (_) {
+        toast({ title: "Could not open report", desc: "See outputs/impact_report.md.", kind: "warn" });
+      }
+    });
+  }
+  const scheduleBtn = findBtn(document, "Schedule");
+  if (scheduleBtn) {
+    scheduleBtn.addEventListener("click", () => {
+      toast({ title: "Re-run scheduled", desc: "Next pipeline kicks off in 1 hour via /go." });
+    });
+  }
+  const filtersBtn = findBtn(document, "Filters");
+  if (filtersBtn) {
+    filtersBtn.addEventListener("click", () => {
+      toast({ title: "Filters", desc: "Filter drawer is not implemented in this snapshot." });
+    });
+  }
+
+  // ========================================================================
+  // Notifications popover
+  // ========================================================================
+  const bellBtn = document.getElementById("bellBtn");
+  const notifPanel = document.getElementById("notifPanel");
+  const notifDot = bellBtn ? bellBtn.querySelector(".dot") : null;
+  if (bellBtn && notifPanel) {
+    bellBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const open = notifPanel.classList.toggle("on");
+      bellBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+    document.addEventListener("click", (e) => {
+      if (!notifPanel.contains(e.target) && !bellBtn.contains(e.target)) {
+        notifPanel.classList.remove("on");
+        bellBtn.setAttribute("aria-expanded", "false");
+      }
+    });
+    const clearLink = document.getElementById("notifClear");
+    if (clearLink) {
+      clearLink.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (notifDot) notifDot.style.display = "none";
+        notifPanel.querySelectorAll(".notif-item .n-dot").forEach(d => { d.style.opacity = "0.25"; });
+        toast({ title: "Notifications cleared", kind: "success" });
+      });
+    }
+    notifPanel.querySelectorAll(".notif-item").forEach((item) => {
+      item.addEventListener("click", () => {
+        const title = item.querySelector(".n-title")?.textContent || "Notification";
+        toast({ title: "Opened: " + title });
+        notifPanel.classList.remove("on");
+      });
+    });
+  }
+
+  // ========================================================================
+  // Settings gear
+  // ========================================================================
+  const gearBtn = document.getElementById("gearBtn");
+  if (gearBtn) {
+    gearBtn.addEventListener("click", () => {
+      toast({ title: "Settings", desc: "Preferences panel not wired up in this snapshot." });
+    });
+  }
+
+  // ========================================================================
+  // Avatar menu
+  // ========================================================================
+  const avatarBtn = document.getElementById("avatarBtn");
+  const avatarMenu = document.getElementById("avatarMenu");
+  if (avatarBtn && avatarMenu) {
+    const toggleAvatar = (e) => {
+      e.stopPropagation();
+      avatarMenu.classList.toggle("on");
+    };
+    avatarBtn.addEventListener("click", toggleAvatar);
+    avatarBtn.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleAvatar(e); }
+    });
+    document.addEventListener("click", (e) => {
+      if (!avatarMenu.contains(e.target) && !avatarBtn.contains(e.target)) {
+        avatarMenu.classList.remove("on");
+      }
+    });
+    avatarMenu.querySelectorAll("button[data-toast]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        toast({
+          title: btn.dataset.toast,
+          desc: btn.dataset.toastDesc || "",
+          kind: btn.dataset.toastKind || "info"
+        });
+        avatarMenu.classList.remove("on");
+      });
+    });
+  }
+
+  // ========================================================================
+  // Tab switching
+  // ========================================================================
+  const TAB_HEAD = {
+    overview:   { h1: "Fraud Detection Overview", sub: 'Real-time model performance and transaction monitoring &middot; <strong>XGBoost v1.2.0</strong> &middot; deployed <strong>2026-04-24</strong>' },
+    alerts:     { h1: "Alerts",                   sub: 'Real-time stream of model-flagged transactions &middot; <strong>14</strong> open &middot; SLA <strong>5 min</strong>' },
+    models:     { h1: "Model Registry",           sub: 'Production model and version history &middot; F1 gate <strong>&ge; 0.85</strong> &middot; CI lower <strong>0.8554</strong>' },
+    reports:    { h1: "Pipeline Reports",         sub: '42 runs in the last 30 days &middot; success rate <strong>100%</strong> &middot; avg cost <strong>$5.51</strong>' },
+    governance: { h1: "Governance &amp; Audit",       sub: 'Trace log, agent debates, verdicts, and approval overrides for the latest pipeline run' }
+  };
+
+  function setTab(name) {
+    document.body.dataset.tab = name;
+    // Show / hide tab-scoped sections
+    document.querySelectorAll("[data-tabs]").forEach((el) => {
+      const tabs = el.dataset.tabs.split(/\s+/);
+      el.classList.toggle("hidden", !tabs.includes(name));
+    });
+    // Active nav state
+    document.querySelectorAll(".nav a").forEach((a) => {
+      a.classList.toggle("active", a.dataset.tab === name);
+    });
+    // Update page-head h1 + subtitle (preserve live timestamp node)
+    const head = TAB_HEAD[name] || TAB_HEAD.overview;
+    const h1 = document.querySelector(".page-head h1");
+    if (h1) h1.innerHTML = head.h1;
+    const sub = document.querySelector(".page-head .sub");
+    if (sub) {
+      sub.innerHTML = head.sub;
+      updateHeadTimestamp();
+    }
+    // Scroll to top of main on switch
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  document.querySelectorAll(".nav a").forEach((a) => {
+    a.addEventListener("click", (e) => {
+      e.preventDefault();
+      const tab = a.dataset.tab || "overview";
+      setTab(tab);
+    });
+  });
+
+  // Initialize from any deep-link in hash, default overview
+  const initialTab = (location.hash || "").replace("#", "");
+  setTab(["overview","alerts","models","reports","governance"].includes(initialTab) ? initialTab : "overview");
+
+  // ========================================================================
+  // Alert volume bars (Alerts tab)
+  // ========================================================================
+  const alertBars = document.getElementById("alertBars");
+  if (alertBars) {
+    const maxAlerts = Math.max(...hours.map(h => h.caught + h.fp));
+    hours.forEach((d) => {
+      const total = d.caught + d.fp;
+      const bar = document.createElement("div");
+      bar.className = "bc-bar";
+      bar.style.height = Math.max(4, (total / maxAlerts) * 100) + "%";
+      // Tier color by share of high-risk (caught) vs lower (fp)
+      if (total >= 18)      bar.style.background = "linear-gradient(180deg, #f87171 0%, rgba(248,113,113,0.45) 100%)";
+      else if (total >= 12) bar.style.background = "linear-gradient(180deg, #fbbf24 0%, rgba(251,191,36,0.45) 100%)";
+      bar.title = String(d.h).padStart(2, "0") + ":00 — " + total + " alerts (" + d.caught + " caught + " + d.fp + " FP)";
+      alertBars.appendChild(bar);
+    });
+  }
+
+  // ========================================================================
+  // Filter chips on Alerts table
+  // ========================================================================
+  const alertsTable = document.getElementById("alertsTable");
+  document.querySelectorAll(".filter-chip[data-filter]").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      // toggle .on within its filter-bar
+      const bar = chip.parentElement;
+      bar.querySelectorAll(".filter-chip").forEach(c => c.classList.remove("on"));
+      chip.classList.add("on");
+      const f = chip.dataset.filter;
+      if (!alertsTable) return;
+      alertsTable.querySelectorAll("tbody tr").forEach((row) => {
+        const r = row.dataset.risk;
+        const s = row.dataset.status;
+        let show = true;
+        if (f === "all") show = true;
+        else if (["high","med","low"].includes(f)) show = (r === f);
+        else if (["blocked","review","cleared"].includes(f)) show = (s === f);
+        row.classList.toggle("filtered-out", !show);
+      });
+    });
+  });
+
+  // ========================================================================
+  // Card / row "more" buttons
+  // ========================================================================
+  document.querySelectorAll(".more-btn").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const row = btn.closest("tbody tr");
+      if (row) {
+        const txid = row.querySelector("td.mono")?.textContent || "transaction";
+        const wasSelected = row.classList.contains("selected");
+        document.querySelectorAll("tbody tr.selected").forEach(r => r.classList.remove("selected"));
+        if (!wasSelected) {
+          row.classList.add("selected");
+          toast({ title: "Opening case file", desc: txid });
+        }
+        return;
+      }
+      const card = btn.closest(".card");
+      const titleEl = card?.querySelector(".card-title");
+      const title = titleEl ? titleEl.firstChild.textContent.trim() : "Card";
+      toast({ title: title, desc: "Options: Copy link, Export CSV, Hide" });
+    });
+  });
+
+  // ========================================================================
+  // Search: real input + table filter + Ctrl+K focus
+  // ========================================================================
+  const searchInput = document.getElementById("searchInput");
+  if (searchInput) {
+    searchInput.addEventListener("input", (e) => {
+      const q = e.target.value.trim().toLowerCase();
+      let visible = 0, total = 0;
+      document.querySelectorAll("tbody tr").forEach((row) => {
+        total++;
+        const txt = row.textContent.toLowerCase();
+        const match = !q || txt.includes(q);
+        row.classList.toggle("filtered-out", !match);
+        if (match) visible++;
+      });
+      // No-results indicator: reuse the existing hint via a toast on first miss
+      if (q && visible === 0 && !searchInput.dataset.warned) {
+        toast({ title: "No matching transactions", desc: "Showing all rows again will clear the filter.", kind: "warn" });
+        searchInput.dataset.warned = "1";
+      } else if (visible > 0) {
+        delete searchInput.dataset.warned;
+      }
+    });
+    document.addEventListener("keydown", (e) => {
+      if ((e.ctrlKey || e.metaKey) && (e.key === "k" || e.key === "K")) {
+        e.preventDefault();
+        searchInput.focus();
+        searchInput.select();
+      }
+      if (e.key === "Escape" && document.activeElement === searchInput) {
+        searchInput.value = "";
+        searchInput.dispatchEvent(new Event("input"));
+        searchInput.blur();
+      }
+    });
+  }
+
+  // ========================================================================
+  // Time-range segmented control: visual swap + toast
+  // ========================================================================
+  document.querySelectorAll(".seg").forEach((seg) => {
+    seg.addEventListener("click", (e) => {
+      const btn = e.target.closest("button");
+      if (!btn || btn.classList.contains("on")) return;
+      seg.querySelectorAll("button").forEach(b => b.classList.remove("on"));
+      btn.classList.add("on");
+      btn.setAttribute("aria-selected", "true");
+      toast({ title: "Range: " + btn.textContent.trim(), desc: "Chart re-aggregated." });
+    });
+  });
+
+  // ========================================================================
+  // Table row click → select + open case
+  // ========================================================================
+  document.querySelectorAll("tbody tr").forEach((row) => {
+    row.addEventListener("click", (e) => {
+      // Skip if click is on the row's own more-btn (it has its own handler)
+      if (e.target.closest(".more-btn")) return;
+      const wasSelected = row.classList.contains("selected");
+      document.querySelectorAll("tbody tr.selected").forEach(r => r.classList.remove("selected"));
+      if (!wasSelected) row.classList.add("selected");
+    });
+  });
+
+})();
+</script>
+</body>
+</html>

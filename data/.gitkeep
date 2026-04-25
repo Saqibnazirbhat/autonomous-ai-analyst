@@ -1,0 +1,7 @@
+# Place creditcard.csv (Kaggle credit-card-fraud-detection) here:
+#   data/creditcard.csv/creditcard.csv
+#
+# The dataset is too large to commit (~150 MB) and is not redistributable
+# under Kaggle's terms. Download it locally, then run:
+#   python scripts/run_pipeline.py
+# to regenerate data/clean.parquet and all downstream artifacts.

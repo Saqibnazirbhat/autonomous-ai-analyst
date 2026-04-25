@@ -1,0 +1,18 @@
+{
+  "agent_role": "bull",
+  "claim": "Deploy the XGBoost fraud model with analyst-in-the-loop review: a 20-seed F1 95% CI of [0.8554, 0.8764] clears the 0.85 bar on both endpoints and the expected-value saving is $40,945 per ~0.4-day test slice (~$102k/day) versus flag-nothing.",
+  "evidence": [
+    "Seed-variance study (outputs/seed_variance.json) across 20 seeds: F1 mean=0.8659, std=0.0249, 95% bootstrap CI=[0.8554, 0.8764]; both CI endpoints sit above the 0.85 bar and 15/20 seeds (75%) clear it individually - the v1 single-seed F1=0.8586 was not a lucky outlier, it sat below the mean.",
+    "Cost-matrix analysis (outputs/cost_analysis.json) at FN=$500 / FP=$5: model_cost=$8,055 vs flag_none_cost=$49,000 -> savings_vs_flag_none=$40,945 per test slice (~0.40 days), extrapolating to $102,367/day; the 11 FPs cost only $55 in analyst time while the 16 FNs drive $8,000 of residual loss, so the bear's 'analyst-burden' framing is off by two orders of magnitude.",
+    "Even under the worst seed (seed 14, F1=0.8172, outputs/seed_variance.json) the cost_analysis note projects FN count rising only to ~20 and adding ~$2,000 to model_cost - still an order of magnitude below flag_none_cost=$49,000, so EV stays strongly positive across the full seed distribution.",
+    "Drift-shuffle control (outputs/drift_shuffle.json): max |rel_delta| under random shuffle = 1.9999927 on V2, essentially identical to the Time-median value - proving the rel_delta=~2.0 headline in drift_report.json is a metric artifact of zero-mean PCA features, not a split-specific signal, so v1's uncritical acceptance of drift_detected=true was overcalibrated.",
+    "Model discrimination remains strong regardless of the drift debate: AUC=0.9684 and precision=0.8817 on the held-out 56,962-row test set (models/metrics.json), with TN=56,853 / FP=11 (false-positive rate 0.019%) - the operating point is analyst-friendly, not alarm-spammy.",
+    "PipelineOutput contract (outputs/pipeline_output.json) is intact: clean_data_path, train_rows=227,845 / test_rows=56,962, model_path, and all four model_metrics are typed and populated - the deploy decision rests on a schema-valid artifact, not an ad-hoc run."
+  ],
+  "confidence": 0.78,
+  "challenges": [
+    "Time-median KS test flags 29/29 features as p<0.05 (outputs/drift_shuffle.json) - real distributional drift along Time exists, so deployment must be paired with the hourly @drift-monitor loop and a retrain trigger on KS-stat escalation, not a fire-and-forget release.",
+    "5/20 seeds (25%) land below F1=0.85, with the worst at 0.8172 - the production training job should fix a seed only after a multi-seed screening run, and monitoring must alert if live F1 drops below the CI lower bound of 0.8554.",
+    "The $500 FN / $5 FP cost matrix in outputs/cost_analysis.json is an assumption, not a measured figure; if true FN cost is materially lower (e.g., chargeback insurance absorbs losses) the EV shrinks, so finance sign-off on the cost matrix is a precondition for auto-approval."
+  ]
+}

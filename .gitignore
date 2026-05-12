@@ -24,3 +24,4 @@ Thumbs.db
 # Local Claude state (not part of the project contract)
 memory/
 .claude/settings.local.json
+CLAUDE.md
